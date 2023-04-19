@@ -1,9 +1,8 @@
 :lang: en
-:toc:
 
 [[cha:mesa_modbusl]]
 
-=Mesa Modbus=
+= Mesa Modbus =
 
 A framework to create custom, realtime, modbus drivers using the Mesa
 PktUART component.
@@ -14,7 +13,7 @@ They include, but are not limited to:
 
 <<cha:mb2hal>>
 
-https://forum.linuxcnc.org/24-hal-components/38733-vfdmod-an-easy-vfd-control-over-modbus-rtu?start=0#162435
+https://forum.linuxcnc.org/24-hal-components/38733-vfdmod-an-easy-vfd-control-over-modbus-rtu?start=0#162435[vfdmod]
 
 <<cha:cl-programming>>
 
@@ -55,7 +54,7 @@ be to re-purpose the smart-serial port on the 7i96 as a modbus port to
 control a VFD. If you do not have a Mesa card then this is obviously no
 advantage at all.
 
-==Quick Start==
+== Quick Start ==
 
 Install the linuxcnc-dev package. (FIXME: modcompile and mesa_uart.c are
 not yet included in linuxcnc-dev)
@@ -69,13 +68,13 @@ Run the command:
 modcompile my_file.mod
 ----
 
-and the "modcompile" script will compile and install the module. For
-reasons related to the fact that in some realtime implementations
-LinuxCNC realtime modules are kernel modules where file access to
-modules is not available mesa_modbus compiles-in the modbus register
-structure and HAL pins into an immutable, loadable, module. If you
-need to change the register assigments or add/remove pins/registers
-then the module must be recompiled.
+and the "modcompile" script will compile and install the module. As
+some realtime implementations of LinuxCNC realtime require that modules
+be kernel modules, and kernel modules have no access to files, the
+mesa_modbus framework compiles-in the modbus register structure and
+HAL pins into an immutable, loadable, module. If you need to change
+the register assigments or add/remove pins/registers then the module
+must be recompiled.
 
 Load and activate the module with HAL commands such as
 
@@ -84,29 +83,29 @@ loadrt my_file ports=hm2_7i69.0.pktuart.0
 addf my_file servo-thread
 ----
 
-==Modbus==
+== Modbus ==
 
 Rather than document modbus here, the main details can be found at:
 https://en.wikipedia.org/wiki/Modbus
 
 The mesa_modbus system supports modbus commands 1,2,3,5,6,15,16.
 
-==HAL Interface==
+== HAL Interface ==
 
 Modbus *write* commands will create HAL *input* pins, that take values
-from HAL and pass them to the Modbis device.
+from HAL and pass them to the Modbus device.
 
 Modbus *read* commands will read data from the device and pass that to
 HAL *output* pins for use by other components.
 
-HAL_BIT, HAL_U32 and HAL_S32 pins will present the the (16 bit) Modbus
+HAL_BIT, HAL_U32 and HAL_S32 pins will present the (16 bit) Modbus
 registers exactly as the bits are delivered from the device and will
 send them to the device as 16 bit values according to standard C type
 conversion standards. HAL_FLOAT values are treated differently. When a
 float pin is specified then two extra HAL pins are created with the
-same name but suffixed with -scale ond offset. The value from the
-modbus register will be interpreted as a sighed-16bit number and then
-it will be mutliplied by the scale value and then the offset will be
+same name but suffixed with -scale and offset. The value from the
+modbus register will be interpreted as a sighed-16 bit number. It will
+then be mutliplied by the scale value and then the offset will be
 added (ie the offset is in local units, and the scale converts units)
 
 The reverse transformation is performed when writing to the device.
@@ -114,20 +113,26 @@ The reverse transformation is performed when writing to the device.
 All Modbus registers are 16 bits. It is possible that in some applications
 this might be used to represent encoder counts or some other number that
 will wrap-around. To circumvent this problem in the case of the HAL_S32
-pin type the registers will be promoted to float (whch can represent
-integers up to 53 bits in length) and presented on a HAL pin with the
-suffix "extnd". For example mymodule.0.counts-0-extnd.
+pin type the registers will be promoted to float (which can represent
+integers up to 53 bits in length) and this wrap-adjusted value will
+be presented on a HAL pin with the suffix "extnd".
+For example mymodule.0.counts-0-extnd.
 
 
 In addition to the pins configured in the definition file, each
 module will create the following pins for each instance of the driver:
 
-modname.address (default 0x01)
-modname.baudrate (default 9600)
-modname.parity  (default 0 (no parity) options are 1 for odd and 2 for even.)
-modname.txdelay (default 20 bit lengths. generally be larger than Rx Delay)
-modname.rxdelay (default 15)
-modname.drive_delay (default 0)
+*modname.address* (default 0x01)
+
+*modname.baudrate* (default 9600)
+
+*modname.parity*  (default 0 (no parity) options are 1 for odd and 2 for even.)
+
+*modname.txdelay* (default 20 bit lengths. Generally shoiuld be larger than Rx Delay)
+
+*modname.rxdelay* (default 15)
+
+*modname.drive_delay* (default 0)
 
 These can be redefined at any time and will take effect the next time
 that a modbus packet is assembled.
@@ -141,7 +146,7 @@ to be given to the "ports" modparam on the "loadrt" file. See the
 example in the [Quick Start] section.
 
 
-==Configuration File==
+== Configuration File ==
 
 A Mesa_Modbus configuration file is actually a C header file and must
 conform to C syntax rules. An example file is included here:
@@ -179,14 +184,14 @@ static const hm2_modbus_chan_descriptor_t channels[] = {
 // Create 7 scaled FP HAL pins to control holfing registers at 0x400-0x406
     {HAL_FLOAT, 16,  0x0300, 1,     "more_floats"},
 };
----
+----
 
 Typically the comments would not be included in a config file.
 
 MAX_MSG_LEN can be included as a #define if required, but will default
-to 16 if necessary. The Modbus protocol forces a hard max limit of 251,
-but that would imply setting thousand of bits of hundreds of registers
-in a single transaction.
+to 16 bytes if this is omitted. The Modbus protocol forces a hard max
+limit of 251 bytes, but that would imply setting thousands of bits or
+hundreds of registers in a single transaction.
 
 An optional DEBUG parameter may be defined. This will default to
 RTAPI_MSG_ERR (1) which means that only error messages will be shown.
@@ -244,7 +249,7 @@ digit suffix, eg `volts-03`. For commands that do not support multiple
 values (5, 6) the count column is silently ignored (but must be numeric
 and not omitted)
 
-==Compiling==
+== Compiling ==
 
 A simple script 'modcompile' is provided that will compile and install
 a new HAL module based on the mesa_modbus.c file and the pin definition
@@ -274,19 +279,19 @@ if using RTAI kernel realtime.
 Alternatively the package should be installable with the Synaptic
 package manager.
 
-==Hardware Connection==
+== Hardware Connection ==
 
 The Mesa serial ports have separate pins for Tx and Tx pairs. For RS422
 Modbus RTU communications these should be connected at the Mesa card
 Tx+ to Rx+ and Tx- to Rx-.
 
 Nore that there are differing naming standards for Modbus pins.
-TYpically Rx+ and TX+ will connect to the B- pin on the modbus device
+Typically Rx+ and TX+ will connect to the B- pin on the modbus device
 and Rx- and Tx- will connect to the A+ pin. (ie, +/- will appear
 reversed.
 
 
-===Ad-hoc Modbus device access===
+=== Ad-hoc Modbus device access ===
 
 For experimentation and one-off configuration it is possible to send /
 recieve data through the FPGA serial port using the mesaflash utility
@@ -310,13 +315,14 @@ mesaflash --device 7i96 --addr 10.10.10.10 --wpo 0x6800=0x3FC0140C
 # Reset the TX and RX UARTS
 mesaflash --device 7i96 --addr 10.10.10.10 --wpo 0x6400=0x80010000
 mesaflash --device 7i96 --addr 10.10.10.10 --wpo 0x6800=0x80010000
-# load 7 bytes of data into the TX UART
+# load two 8-byte modbus commands:
+# 01 05 00 00 5A 00 F7 6A and 01 01 00 00 00 01 FD CA
 mesaflash --device 7i96 --addr 10.10.10.10 --wpo 0x6100=0x00000501
 mesaflash --device 7i96 --addr 10.10.10.10 --wpo 0x6100=0x6AF7005A
 mesaflash --device 7i96 --addr 10.10.10.10 --wpo 0x6100=0x00000101
 mesaflash --device 7i96 --addr 10.10.10.10 --wpo 0x6100=0xCAFD0100
 
-# Command the TX UART to send two 8 byte packets
+# Command the TX UART to send the two 8 byte packets
 mesaflash --device 7i96 --addr 10.10.10.10 --wpo 0x6200=0x08
 mesaflash --device 7i96 --addr 10.10.10.10 --wpo 0x6200=0x08
 sleep 1
