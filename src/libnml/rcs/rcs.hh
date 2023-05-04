@@ -28,7 +28,7 @@ class RCS_TIMER;
 class RCS_CMD_MSG;
 class RCS_STAT_MSG;
 
-enum RCS_STATUS {               /* Originally from nml_mod.hh */
+enum RCS_STATUS {
     UNINITIALIZED_STATUS = -1,
     RCS_DONE = 1,
     RCS_EXEC = 2,

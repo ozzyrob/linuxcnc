@@ -24,10 +24,6 @@ class RCS_STAT_MSG:public NMLmsg {
     int echo_serial_number;
     int status;
     int state;
-    int line;
-    int source_line;
-    char source_file[64];
-
 };
 
 extern int RCS_STAT_MSG_format(NMLTYPE, void *, CMS *);
