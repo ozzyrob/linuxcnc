@@ -324,7 +324,7 @@ int emcTaskSetState(int state)
 	}
 	emcTrajDisable();
 	emcIoAbort(EMC_ABORT_TASK_STATE_OFF);
-	emcLubeOff();
+    emcCoolantFloodOff();//TODO: race here
 	emcTaskAbort();
     emcJointUnhome(-2); // only those joints which are volatile_home
 	emcAbortCleanup(EMC_ABORT_TASK_STATE_OFF);
@@ -337,13 +337,13 @@ int emcTaskSetState(int state)
 	for (t = 0; t < emcStatus->motion.traj.joints; t++){
 		emcJointEnable(t);
 	}
-	emcLubeOn();
+    emcCoolantFloodOff();//TODO: race here
 	break;
 
     case EMC_TASK_STATE_ESTOP_RESET:
 	// reset the estop
 	emcAuxEstopOff();
-	emcLubeOff();
+	emcCoolantFloodOff();//TODO: race here
 	emcTaskAbort();
         emcIoAbort(EMC_ABORT_TASK_STATE_ESTOP_RESET);
     for (t = 0; t < emcStatus->motion.traj.spindles; t++) emcSpindleAbort(t);
@@ -360,7 +360,7 @@ int emcTaskSetState(int state)
 	    emcJointDisable(t);
 	}
 	emcTrajDisable();
-	emcLubeOff();
+    emcCoolantFloodOff();//TODO: race here
 	emcTaskAbort();
         emcIoAbort(EMC_ABORT_TASK_STATE_ESTOP);
 	for (t = 0; t < emcStatus->motion.traj.spindles; t++) emcSpindleAbort(t);

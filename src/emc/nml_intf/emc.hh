@@ -31,7 +31,6 @@ class EMC_TOOL_STAT;
 class EMC_AUX_STAT;
 class EMC_SPINDLE_STAT;
 class EMC_COOLANT_STAT;
-class EMC_LUBE_STAT;
 class EMC_IO_STAT;
 class EMC_STAT;
 class CMS;
@@ -220,11 +219,6 @@ struct PM_CARTESIAN;
 #define EMC_COOLANT_FLOOD_OFF_TYPE                   ((NMLTYPE) 1407)
 
 #define EMC_COOLANT_STAT_TYPE                        ((NMLTYPE) 1499)
-
-// EMC_LUBE type declarations
-#define EMC_LUBE_ON_TYPE                             ((NMLTYPE) 1504)
-#define EMC_LUBE_OFF_TYPE                            ((NMLTYPE) 1505)
-#define EMC_LUBE_STAT_TYPE                           ((NMLTYPE) 1599)
 
 // EMC_IO aggregate class type declaration
 #define EMC_IO_INIT_TYPE                             ((NMLTYPE) 1601)
@@ -511,13 +505,6 @@ extern int emcCoolantFloodOn();
 extern int emcCoolantFloodOff();
 
 extern int emcCoolantUpdate(EMC_COOLANT_STAT * stat);
-
-// implementation functions for EMC_LUBE types
-
-extern int emcLubeOn();
-extern int emcLubeOff();
-
-extern int emcLubeUpdate(EMC_LUBE_STAT * stat);
 
 // implementation functions for EMC_IO types
 
