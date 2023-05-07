@@ -65,7 +65,7 @@ Create a new definition file similar to analogue.mod and relayboard.mod
 Run the command:
 
 ----
-modcompile my_file.mod
+./modcompile my_file.mod
 ----
 
 and the "modcompile" script will compile and install the module. As
@@ -105,18 +105,19 @@ conversion standards. HAL_FLOAT values are treated differently. When a
 float pin is specified then two extra HAL pins are created with the
 same name but suffixed with -scale and offset. The value from the
 modbus register will be interpreted as a sighed-16 bit number. It will
-then be mutliplied by the scale value and then the offset will be
-added (ie the offset is in local units, and the scale converts units)
+then be multiplied by the scale value and then the offset will be
+added (ie the offset is in engineering units, and the scale converts 16
+bit register values to engineering units)
 
 The reverse transformation is performed when writing to the device.
 
 All Modbus registers are 16 bits. It is possible that in some applications
 this might be used to represent encoder counts or some other number that
 will wrap-around. To circumvent this problem in the case of the HAL_S32
-pin type the registers will be promoted to float (which can represent
-integers up to 53 bits in length) and this wrap-adjusted value will
-be presented on a HAL pin with the suffix "extnd".
-For example mymodule.0.counts-0-extnd.
+pin type the registers will be promoted to signed 64-bit internally then
+multiplied by the "scale" pin value and presented as a floating point
+value on a HAL pin with the suffix "scaled".
+For example mymodule.0.counts-0-scaled.
 
 
 In addition to the pins configured in the definition file, each
@@ -128,7 +129,7 @@ module will create the following pins for each instance of the driver:
 
 *modname.parity*  (default 0 (no parity) options are 1 for odd and 2 for even.)
 
-*modname.txdelay* (default 20 bit lengths. Generally shoiuld be larger than Rx Delay)
+*modname.txdelay* (default 20 bit lengths. Generally should be larger than Rx Delay)
 
 *modname.rxdelay* (default 15)
 
@@ -258,11 +259,11 @@ necessary except in the special case of the 'modcompile all' command,
 which will compile and install all .mod files in the current directory.
 
 ----
-modcompile my_file.mod
+./modcompile my_file.mod
 ----
 or
 ----
-modcompile all
+./modcompile all
 ----
 
 "modcompile" is provided by the "linuxcnc-dev" package.

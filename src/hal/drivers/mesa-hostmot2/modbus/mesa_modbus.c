@@ -38,10 +38,10 @@ MODULE_LICENSE("GPL");
 
 #define MAX_CHAN 8
 
-char error_codes[11][30]={"NULL", "Illegal Function", "Illegal Data Address",
+char error_codes[12][30]={"NULL", "Illegal Function", "Illegal Data Address",
     "Illegal Data Value", "Server Device Failure", "Acknowledge",
     "Server Device Busy", "Negative Acknowledge", "Memory Parity Error",
-    "Gateway Path Unavailable", "Gateway Failed to Respond"};
+    "Gateway Path Unavailable", "Gateway Failed to Respond", "Comm Timeout"};
 
 // This is needed by the header file
 typedef struct {
@@ -49,7 +49,7 @@ typedef struct {
     int func;
     rtapi_u16 addr;
     rtapi_u8 count;
-    char name[HAL_NAME_LEN];
+    char name[HAL_NAME_LEN * 16];
 } hm2_modbus_chan_descriptor_t;
 
 #define xstr(x) #x
@@ -59,10 +59,6 @@ typedef struct {
 #define COMP_NAME str(_COMP_NAME_)
 #else
 #define COMP_NAME "mesa_modbus"
-#endif
-
-#ifndef DEBUG
-#define DEBUG 1
 #endif
 
 // get the channel / register definitions
@@ -78,6 +74,9 @@ typedef struct {
 #define MAX_MSG_LEN 16
 #endif
 
+#ifndef DEBUG
+#define DEBUG 1
+#endif
 
 enum {
     START,
@@ -89,18 +88,23 @@ enum {
     FETCH_MORE_DATA,
     WAIT_A_BIT,
     WAIT_FOR_RX_CLEAR,
+    RESET_WAIT,
 };
 
 typedef struct {
-    hal_u32_t *address;
-    hal_u32_t *baudrate;
-    hal_u32_t *parity;
     hal_data_u **pins;
     hal_float_t **scale;
-    hal_float_t **offset;
-    hal_u32_t *txdelay;
-    hal_u32_t *rxdelay;
-    hal_u32_t *drive_delay;
+    hal_data_u **pin2;
+    rtapi_s64 *buff;
+    hal_bit_t *fault;
+    hal_u32_t *last_err;
+    hal_u32_t address;
+    hal_u32_t baudrate;
+    hal_u32_t parity;
+    hal_u32_t txdelay;
+    hal_u32_t rxdelay;
+    hal_u32_t drive_delay;
+    hal_float_t rate;
 } hm2_modbus_hal_t;
 
 typedef struct {
@@ -117,7 +121,7 @@ typedef struct{
     char port[HAL_NAME_LEN];
     int num_chans;
     int num_pins;
-    hm2_modbus_hal_t hal;
+    hm2_modbus_hal_t *hal;
     hm2_modbus_channel_t *chans;
     int baudrate;
     int parity;
@@ -196,16 +200,11 @@ int rtapi_app_main(void){
         }
         // Malloc structs and pins, some in main or kernel memory, some in HAL
         inst->chans = (hm2_modbus_channel_t *)rtapi_kmalloc(inst->num_chans * sizeof(hm2_modbus_channel_t), RTAPI_GFP_KERNEL);
-        //inst->hal = (hm2_modbus_hal_t )hal_malloc(sizeof(hm2_modbus_hal_t));
-        inst->hal.address = (hal_u32_t*)hal_malloc(sizeof(hal_u32_t));
-        inst->hal.baudrate = (hal_u32_t*)hal_malloc(sizeof(hal_u32_t));
-        inst->hal.parity = (hal_u32_t*)hal_malloc(sizeof(hal_u32_t));
-        inst->hal.txdelay = (hal_u32_t*)hal_malloc(sizeof(hal_u32_t));
-        inst->hal.rxdelay = (hal_u32_t*)hal_malloc(sizeof(hal_u32_t));
-        inst->hal.drive_delay = (hal_u32_t*)hal_malloc(sizeof(hal_u32_t));
-        inst->hal.pins = (hal_data_u **)hal_malloc(inst->num_pins * sizeof(hal_data_u));
-        inst->hal.scale = (hal_float_t **)hal_malloc(inst->num_pins * sizeof(hal_float_t));
-        inst->hal.offset = (hal_float_t **)hal_malloc(inst->num_pins * sizeof(hal_float_t));
+        inst->hal =   (hm2_modbus_hal_t *) hal_malloc(sizeof(hm2_modbus_hal_t));
+        inst->hal->pins =  (hal_data_u **) hal_malloc(inst->num_pins * sizeof(hal_data_u));
+        inst->hal->scale = (hal_float_t **)hal_malloc(inst->num_pins * sizeof(hal_float_t));
+        inst->hal->pin2 =  (hal_data_u **) hal_malloc(inst->num_pins * sizeof(hal_data_u));
+        inst->hal->buff =  (rtapi_s64 *) hal_malloc(inst->num_pins * sizeof(rtapi_s64));
         
         rtapi_strlcpy(inst->port, ports[i], HAL_NAME_LEN);
         retval = rtapi_snprintf(hal_name, HAL_NAME_LEN, COMP_NAME".%02i", i);
@@ -218,23 +217,28 @@ int rtapi_app_main(void){
             goto fail0;
         }
 
-        retval = hal_param_s32_newf(HAL_RW, inst->hal.address, comp_id, COMP_NAME".%02i.address", i);
-        retval += hal_param_s32_newf(HAL_RW, inst->hal.baudrate, comp_id, COMP_NAME".%02i.baudrate", i);
-        retval += hal_param_s32_newf(HAL_RW, inst->hal.parity, comp_id, COMP_NAME".%02i.parity", i);
-        retval += hal_param_s32_newf(HAL_RW, inst->hal.txdelay, comp_id, COMP_NAME".%02i.txdelay", i);
-        retval += hal_param_s32_newf(HAL_RW, inst->hal.rxdelay, comp_id, COMP_NAME".%02i.rxdelay", i);
-        retval += hal_param_s32_newf(HAL_RW, inst->hal.drive_delay, comp_id, COMP_NAME".%02i.drvdelay", i);
+        retval =  hal_param_s32_newf(HAL_RW, &(inst->hal->address), comp_id, COMP_NAME".%02i.address", i);
+        retval += hal_param_s32_newf(HAL_RW, &(inst->hal->baudrate), comp_id, COMP_NAME".%02i.baudrate", i);
+        retval += hal_param_s32_newf(HAL_RW, &(inst->hal->parity), comp_id, COMP_NAME".%02i.parity", i);
+        retval += hal_param_s32_newf(HAL_RW, &(inst->hal->txdelay), comp_id, COMP_NAME".%02i.txdelay", i);
+        retval += hal_param_s32_newf(HAL_RW, &(inst->hal->rxdelay), comp_id, COMP_NAME".%02i.rxdelay", i);
+        retval += hal_param_s32_newf(HAL_RW, &(inst->hal->drive_delay), comp_id, COMP_NAME".%02i.drive-delay", i);
+        retval += hal_param_float_newf(HAL_RW, &(inst->hal->rate), comp_id, COMP_NAME".%02i.update-hz", i);
+        retval += hal_pin_bit_newf(HAL_OUT, &(inst->hal->fault), comp_id, COMP_NAME".%02i.fault", i);
+        retval += hal_pin_u32_newf(HAL_OUT, &(inst->hal->last_err), comp_id, COMP_NAME".%02i.last-error", i);
         if (retval < 0) {
-            rtapi_print_msg(RTAPI_MSG_ERR, COMP_NAME" ERROR: failed to create one or more parameters\n");
+            rtapi_print_msg(RTAPI_MSG_ERR, COMP_NAME" ERROR: failed to create one or more pins/parameters\n");
             goto fail0;
         }
 
-        *inst->hal.address = 0x01;
-        *inst->hal.baudrate = 9600;
-        *inst->hal.parity = 0;
-        *inst->hal.txdelay = 20;      // should generally be larger than Rx Delay
-        *inst->hal.rxdelay = 15;
-        *inst->hal.drive_delay = 0;   // delay between setting drive enable and sending data
+        inst->hal->address = 0x01;
+        inst->hal->baudrate = 9600;
+        inst->hal->parity = 0;
+        inst->hal->txdelay = 20;      // should generally be larger than Rx Delay
+        inst->hal->rxdelay = 15;
+        inst->hal->drive_delay = 0;   // delay between setting drive enable and sending data
+        *(inst->hal->fault) = 0;
+        *(inst->hal->last_err) = 0;
 
         inst->state = START;
                     
@@ -274,15 +278,14 @@ int rtapi_app_main(void){
                 case 2: // read inputs
                     if (ch->count > 1){
                         for (int j = 0; j < ch->count; j++){
-                            
                             retval = hal_pin_bit_newf(dir,
-                                    (hal_bit_t**)&(inst->hal.pins[p++]),
+                                    (hal_bit_t**)&(inst->hal->pins[p++]),
                                     comp_id, COMP_NAME".%02i.%s-%02i",
                                     i, channels[c].name, j);
                         }
                     } else {
                         retval = hal_pin_bit_newf(dir,
-                                    (hal_bit_t**)&(inst->hal.pins[p++]),
+                                    (hal_bit_t**)&(inst->hal->pins[p++]),
                                             comp_id, COMP_NAME".%02i.%s",
                                             i, channels[c].name);
                     }
@@ -312,69 +315,79 @@ int rtapi_app_main(void){
                         case HAL_U32:
                             if (ch->count > 1) {
                                 retval = hal_pin_u32_newf(dir,
-                                    (hal_u32_t**)&(inst->hal.pins[p++]),
+                                    (hal_u32_t**)&(inst->hal->pins[p]),
                                     comp_id, COMP_NAME".%02i.%s-%02i",
                                     i, channels[c].name, j);
                             } else {
                                 retval = hal_pin_u32_newf(dir,
-                                    (hal_u32_t**)&(inst->hal.pins[p++]),
+                                    (hal_u32_t**)&(inst->hal->pins[p]),
                                     comp_id, COMP_NAME".%02i.%s",
                                     i, channels[c].name);
                             }
+                            p++;
                             break;
                         case HAL_S32:
                             if (ch->count > 1) {
                                 retval = hal_pin_s32_newf(dir,
-                                    (hal_s32_t**)&(inst->hal.pins[p]),
+                                    (hal_s32_t**)&(inst->hal->pins[p]),
                                     comp_id, COMP_NAME".%02i.%s-%02i",
                                     i, channels[c].name, j);
+                                retval = hal_pin_float_newf(HAL_IN,
+                                    (hal_float_t**)&(inst->hal->scale[p]),
+                                    comp_id, COMP_NAME".%02i.%s-%02i-scale",
+                                    i, channels[c].name, j);
                                 retval = hal_pin_float_newf(dir,
-                                    &(inst->hal.offset[p++]),
-                                    comp_id, COMP_NAME".%02i.%s-%02i-extnd",
+                                    (hal_float_t**)&(inst->hal->pin2[p]),
+                                    comp_id, COMP_NAME".%02i.%s-%02i-scaled",
                                     i, channels[c].name, j);
                             } else {
                                 retval = hal_pin_s32_newf(dir,
-                                    (hal_s32_t**)&(inst->hal.pins[p]),
+                                    (hal_s32_t**)&(inst->hal->pins[p]),
                                     comp_id, COMP_NAME".%02i.%s",
                                     i, channels[c].name);
+                                retval = hal_pin_float_newf(HAL_IN,
+                                    (hal_float_t**)&(inst->hal->scale[p]),
+                                    comp_id, COMP_NAME".%02i.%s-%02i-scale",
+                                    i, channels[c].name, j);
                                 retval = hal_pin_float_newf(dir,
-                                    &(inst->hal.offset[p++]),
-                                    comp_id, COMP_NAME".%02i.%s-extnd",
+                                    (hal_float_t**)&(inst->hal->pin2[p]),
+                                    comp_id, COMP_NAME".%02i.%s-scaled",
                                     i, channels[c].name);
                             }
+                            *inst->hal->scale[p] = 1.0;
+                            inst->hal->buff[p] = 0;
+                            p++;
                             break;
                         case HAL_FLOAT:
                             if (ch->count > 1) {
                                 retval = hal_pin_float_newf(dir,
-                                    (hal_float_t**)&(inst->hal.pins[p]),
+                                    (hal_float_t**)&(inst->hal->pins[p]),
                                     comp_id, COMP_NAME".%02i.%s-%02i",
                                     i, channels[c].name, j);
                                 retval = hal_pin_float_newf(HAL_IN,
-                                    (hal_float_t**)&(inst->hal.scale[p]),
+                                    (hal_float_t**)&(inst->hal->scale[p]),
                                     comp_id, COMP_NAME".%02i.%s-%02i-scale",
                                     i, channels[c].name, j);
                                 retval = hal_pin_float_newf(HAL_IN,
-                                    (hal_float_t**)&(inst->hal.offset[p]),
+                                    (hal_float_t**)&(inst->hal->pin2[p]),
                                     comp_id, COMP_NAME".%02i.%s-%02i-offset",
                                     i, channels[c].name, j);
-                                *(inst->hal.scale[p]) = 1;
-                                p++;
                             } else {
                                 retval = hal_pin_float_newf(dir,
-                                    (hal_float_t**)&(inst->hal.pins[p]),
+                                    (hal_float_t**)&(inst->hal->pins[p]),
                                     comp_id, COMP_NAME".%02i.%s",
                                     i, channels[c].name);
                                 retval = hal_pin_float_newf(HAL_IN,
-                                    (hal_float_t**)&(inst->hal.scale[p]),
+                                    (hal_float_t**)&(inst->hal->scale[p]),
                                     comp_id, COMP_NAME".%02i.%s-scale",
                                     i, channels[c].name, j);
                                 retval = hal_pin_float_newf(HAL_IN,
-                                    (hal_float_t**)&(inst->hal.offset[p]),
+                                    (hal_float_t**)&(inst->hal->pin2[p]),
                                     comp_id, COMP_NAME".%02i.%s-offset",
                                     i, channels[c].name, j);
-                                *(inst->hal.scale[p]) = 1;
-                                p++;
                             }
+                            *(inst->hal->scale[p]) = 1;
+                            p++;
                             break;
                         default:
                            rtapi_print_msg(RTAPI_MSG_ERR,
@@ -406,19 +419,19 @@ int do_setup(hm2_modbus_inst_t *inst){
     int txmode, rxmode, filter;
     int retval;
     
-    if    (inst->baudrate    == *inst->hal.baudrate
-        && inst->parity      == *inst->hal.parity
-        && inst->txdelay     == *inst->hal.txdelay
-        && inst->rxdelay     == *inst->hal.rxdelay
-        && inst->drive_delay == *inst->hal.drive_delay) return 0;
+    if    (inst->baudrate    == inst->hal->baudrate
+        && inst->parity      == inst->hal->parity
+        && inst->txdelay     == inst->hal->txdelay
+        && inst->rxdelay     == inst->hal->rxdelay
+        && inst->drive_delay == inst->hal->drive_delay) return 0;
 
-    if (*inst->hal.txdelay > 0xFF) *inst->hal.txdelay = 0xFF;
-    if (*inst->hal.rxdelay > 0xFF) *inst->hal.rxdelay = 0xFF;
-    inst->baudrate    = *inst->hal.baudrate;
-    inst->parity      = *inst->hal.parity;
-    inst->txdelay     = *inst->hal.txdelay;
-    inst->rxdelay     = *inst->hal.rxdelay;
-    inst->drive_delay = *inst->hal.drive_delay;
+    if (inst->hal->txdelay > 0xFF) inst->hal->txdelay = 0xFF;
+    if (inst->hal->rxdelay > 0xFF) inst->hal->rxdelay = 0xFF;
+    inst->baudrate    = inst->hal->baudrate;
+    inst->parity      = inst->hal->parity;
+    inst->txdelay     = inst->hal->txdelay;
+    inst->rxdelay     = inst->hal->rxdelay;
+    inst->drive_delay = inst->hal->drive_delay;
     
     switch (inst->parity) {
         case 1:
@@ -483,14 +496,16 @@ void do_timeout(hm2_modbus_inst_t *inst){
     if (inst->iter++ > 1000){
         rtapi_print_msg(RTAPI_MSG_INFO, "\n %i TIMEOUT_RESET %i\n", inst->iter, inst->state);
         hm2_pktuart_setup(inst->port, -1, -1, -1, 1, 1);
-        inst->state = START;
+        inst->state = RESET_WAIT;
         inst->iter = 0;
+        *(inst->hal->last_err) = 11;
+        *(inst->hal->fault) = 1;
     }
     rtapi_print_msg(RTAPI_MSG_INFO, "%i timeout %i\r", inst->iter, inst->state);
 }
 
 void process(void *arg, long period) {
-    
+    static long timer = 0;
     hm2_modbus_inst_t *inst = arg;
     
     int r;
@@ -500,6 +515,9 @@ void process(void *arg, long period) {
     
     switch (inst->state) {
         case START:
+
+            if (inst->hal->rate > 0 && (timer -= period) > 0) break;
+            timer = 1e9 / inst->hal->rate;
 
             rtapi_print_msg(RTAPI_MSG_INFO, "START txstatus = %08X rxstatus = %08X\n", txstatus, rxstatus);
 
@@ -586,6 +604,11 @@ void process(void *arg, long period) {
             rtapi_print_msg(RTAPI_MSG_INFO, "\r");
             if (rxstatus & 0x200000) break;
             inst->state = START;
+            *(inst->hal->fault) = 0;
+            break;
+            
+        case RESET_WAIT:
+            if (inst->iter++ > 5) inst->state = START;
             break;
 
         default:
@@ -613,19 +636,20 @@ int ch_append16(hm2_modbus_channel_t *ch, rtapi_u16 v){
 int ch_init(hm2_modbus_channel_t *ch, hm2_modbus_hal_t hal){
     int r;
     ch->ptr = -1;
-    r = ch_append8(ch, *(hal.address));
+    r = ch_append8(ch, hal.address);
     r = ch_append8(ch, ch->func);
     return r;
 }
 
 int build_data_frame(hm2_modbus_inst_t *inst){
     hm2_modbus_channel_t *ch = &(inst->chans[inst->index]);
-    hm2_modbus_hal_t hal = inst->hal;
-    char new_data[MAX_MSG_LEN] = {0};
+    hm2_modbus_hal_t hal = *inst->hal;
     rtapi_u8 acc = 0;
     int byte_count;
     int r;
     int p = ch->start_pin;
+
+    rtapi_print_msg(RTAPI_MSG_INFO, "building packet %X %X start pin %i\n", ch->func, ch->addr, p);
     
     ch_init(ch, hal);
     
@@ -649,19 +673,19 @@ int build_data_frame(hm2_modbus_inst_t *inst){
         case 6: //Write single register
             r += ch_append16(ch, ch->addr);
             switch (ch->type){
-                case HAL_U32:
-                    r += ch_append16(ch, (rtapi_u16)hal.pins[p]->u);
-                    break;
-                case HAL_S32:
-                    r += ch_append16(ch, (rtapi_s16)hal.pins[p]->s);
-                    break;
-                case HAL_FLOAT:
-                    if (hal.scale != 0){
-                            r += ch_append16(ch, (rtapi_s16)((hal.pins[p]->f
-                                            - *hal.offset[p])
-                                            / *hal.scale[p]));
-                    }
-                    break;
+            case HAL_U32:
+                r += ch_append16(ch, (rtapi_u16)hal.pins[p]->u);
+                break;
+            case HAL_S32:
+                r += ch_append16(ch, (rtapi_s16)hal.pins[p]->s);
+                break;
+            case HAL_FLOAT:
+                rtapi_print_msg(RTAPI_MSG_INFO, "671 %f %f %f \n", hal.pins[p]->f, hal.pin2[p]->f, *hal.scale[p]);
+                if (*hal.scale[p] != 0){
+                    r+= ch_append16(ch, (rtapi_u16)((hal.pins[p]->f - hal.pin2[p]->f) / *hal.scale[p])) ;
+                }
+                rtapi_print_msg(RTAPI_MSG_INFO, "678\n");
+                break;
             }
             break;
         case 15: // Write multiple coils
@@ -683,22 +707,18 @@ int build_data_frame(hm2_modbus_inst_t *inst){
             for (int i = 0; i < ch->count; i++){
                 switch (ch->type){
                 case HAL_U32:
-                    rtapi_snprintf(new_data + strlen(new_data), MAX_MSG_LEN, "%04X", (rtapi_u16)hal.pins[p]->u);
+                    r += ch_append16(ch, (rtapi_u16)hal.pins[p]->u);
                     break;
                 case HAL_S32:
-                    rtapi_snprintf(new_data + strlen(new_data), MAX_MSG_LEN, "%04X", (rtapi_u16)hal.pins[p]->s);
+                    r += ch_append16(ch, (rtapi_s16)hal.pins[p]->s);
                     break;
                 case HAL_FLOAT:
-                    if (hal.scale != 0){
-                        rtapi_snprintf(new_data + strlen(new_data), MAX_MSG_LEN, "%04X",
-                            (rtapi_s16)((hal.pins[p]->f - *hal.offset[p]) / *hal.scale[p]));
+                    if (*(hal.scale[p]) != 0){
+                        r+= ch_append16(ch, (rtapi_u16)((hal.pins[p]->f - hal.pin2[p]->f) / *hal.scale[p])) ;
                     }
                     break;
                 }
                 p++ ; // increment pin pointer
-            }
-            if (strcmp(ch->data + 6, new_data) != 0) {
-                rtapi_snprintf(ch->data, MAX_MSG_LEN, "%04X%02X%s", ch->count, ch->count * 2, new_data);
             }
             break;
         default:
@@ -709,7 +729,7 @@ int build_data_frame(hm2_modbus_inst_t *inst){
 
 int parse_data_frame(hm2_modbus_inst_t *inst){
     hm2_modbus_channel_t *ch = &(inst->chans[inst->index]);
-    hm2_modbus_hal_t hal = inst->hal;
+    hm2_modbus_hal_t hal = *inst->hal;
     rtapi_u32 *data = inst->rxdata;
     int count = inst->fsizes[inst->frame_index] & 0x3FF;
     int i;
@@ -760,24 +780,26 @@ int parse_data_frame(hm2_modbus_inst_t *inst){
                     hal.pins[p]->u = 256 * bytes[w++] + bytes[w++];
                     p++;
                     break;
-                case HAL_S32: // wrap the result into the (float) offset too
-                    tmp = hal.pins[p]->u;
-                    hal.pins[p]->u = bytes[w++] * 256 + bytes[w++];
-                    tmp = hal.pins[p]->u - tmp;
+                case HAL_S32: // wrap the result into the (s32) offset too
+                    tmp = hal.pins[p]->s;
+                    //hal.pins[p]->s = bytes[w++] * 256 + bytes[w++];
+                    hal.pins[p]->s = (rtapi_s16)( hal.pins[p]->s - 0x4000); // Testing wrap
+                    tmp = hal.pins[p]->s - tmp;
                     if (tmp > 32768) tmp -= 65536;
                     if (tmp < -32768) tmp += 65536;
-                    hal.offset[p] += tmp;
+                    hal.buff[p] += tmp;
+                    hal.pin2[p]->f = hal.buff[p] * *hal.scale[p];
                     p++;
                     break;
                 case HAL_FLOAT:
-                    hal.pins[p]->f = *(hal.scale[p]) * (256 * bytes[w++] + bytes[w++])
-                                     + *(hal.offset[p]);
+                    hal.pins[p]->f = (256 * bytes[w++] + bytes[w++])
+                                    * *(hal.scale[p]) + hal.pin2[p]->f;
                     p++;
                     break;
                 }
             }
             break;
-        // Nothing to do for write commands 5, 15, 16 ??
+        // Nothing to do for write commands 5, 6, 15, 16 ??
         case 5: // set single coil
         case 6: // write single register
         case 15: // write multiple coils echo
