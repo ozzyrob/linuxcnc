@@ -1,12 +1,12 @@
-.TH HM2_7I90 "9" "2013-10-27" "LinuxCNC Documentation" "HAL Component"
+.TH HM2_7C81 "9" "2013-10-27" "LinuxCNC Documentation" "HAL Component"
 
 .SH NAME
 
-hm2_7i90 \- LinuxCNC HAL driver for the Mesa Electronics 7i90 EPP Anything IO board with HostMot2 firmware.
+hm2_7c81 \- LinuxCNC HAL driver for the Mesa Electronics 7c81 EPP Anything IO board with HostMot2 firmware.
 .SH SYNOPSIS
 
 .HP
-.B loadrt hm2_7i90 [ioaddr=\fIN\fB[,\fIN\fB...]] [ioaddr_hi=\fIN\fB[,\fIN\fB...]] [epp_wide=\fIN\fB[,\fIN\fB...]] [debug_epp=\fIN\fB[,\fIN\fB...]]
+.B loadrt hm2_7c81 [ioaddr=\fIN\fB[,\fIN\fB...]] [ioaddr_hi=\fIN\fB[,\fIN\fB...]] [epp_wide=\fIN\fB[,\fIN\fB...]] [debug_epp=\fIN\fB[,\fIN\fB...]]
 .RS 4
 .TP
 \fBioaddr\fR [default: 0 (parport0)]
@@ -15,7 +15,7 @@ The base address of the parallel port.
 The number of ioaddr indexes/addresses given is used by the driver to
 determine how many boards to search for. Previously the number of config
 strings was used, but a blank config string is perfectly acceptable for
-7i90.
+7c81.
 .TP
 \fBioaddr_hi\fR [default: 0]
 The secondary address of the parallel port, used to set EPP mode.
@@ -36,17 +36,17 @@ transfers.
 .RE
 .SH DESCRIPTION
 
-hm2_7i90 is a device driver that interfaces the Mesa 7i90 board with
+hm2_7c81 is a device driver that interfaces the Mesa 7c81 board with
 the HostMot2 firmware to the LinuxCNC HAL.
 
-The 7i90 firmware is stored on the 7i90 itself, it is not programmed
-by the driver at load time.  The 7i90 firmware can be changed using the
+The 7c81 firmware is stored on the 7c81 itself, it is not programmed
+by the driver at load time.  The 7c81 firmware can be changed using the
 mesaflash program.
 
-The driver talks with the 7i90 over the parallel port, via EPP.
+The driver talks with the 7c81 over the parallel port, via EPP.
 .SH Communicating with the board
 
-The 7i90 communicates with the LinuxCNC computer over EPP, the Enhanced
+The 7c81 communicates with the LinuxCNC computer over EPP, the Enhanced
 Parallel Port.  This provides about 1 MBps of throughput, and the
 communication latency is very predictable and reasonably low.
 
@@ -56,15 +56,15 @@ a setting in the BIOS.
 
 Note that the popular "NetMOS" aka "MosChip 9805" PCI parport cards \fBdo
 not work\fR.  They do not meet the EPP spec, and cannot be reliably used
-with the 7i90.  You have to find another card, sorry.
+with the 7c81.  You have to find another card, sorry.
 
 EPP is very reliable under normal circumstances, but bad cabling
 or excessively long cabling runs may cause communication timeouts.
-The driver exports a parameter named hm2_7i90.<BoardNum>.io_error to
+The driver exports a parameter named hm2_7c81.<BoardNum>.io_error to
 inform HAL of this condition.  When the driver detects an EPP timeout,
-it sets io_error to True and stops communicating with the 7i90 board.
+it sets io_error to True and stops communicating with the 7c81 board.
 Setting io_error back to False makes the driver start trying to
-communicate with the 7i90 again.
+communicate with the 7c81 again.
 
 Access to the EPP bus is not threadsafe: only one realtime thread may
 access the EPP bus.
