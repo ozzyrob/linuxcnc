@@ -22,9 +22,6 @@
     <height>388</height>
    </size>
   </property>
-  <property name="focusPolicy">
-   <enum>Qt::NoFocus</enum>
-  </property>
   <property name="windowTitle">
    <string>Form</string>
   </property>
@@ -54,7 +51,7 @@
        <number>2</number>
       </property>
       <property name="topMargin">
-       <number>4</number>
+       <number>0</number>
       </property>
       <property name="rightMargin">
        <number>2</number>
@@ -866,7 +863,7 @@
                   <cursorShape>IBeamCursor</cursorShape>
                  </property>
                  <property name="mouseTracking">
-                  <bool>false</bool>
+                  <bool>true</bool>
                  </property>
                  <property name="toolTip">
                   <string>Probe diameter</string>
@@ -1131,9 +1128,6 @@
                   <property name="checked">
                    <bool>false</bool>
                   </property>
-                  <property name="autoExclusive">
-                   <bool>false</bool>
-                  </property>
                   <property name="indicator_option" stdset="0">
                    <bool>false</bool>
                   </property>
@@ -1209,17 +1203,70 @@
                   <property name="checked">
                    <bool>false</bool>
                   </property>
-                  <property name="autoRepeat">
+                  <property name="indicator_option" stdset="0">
                    <bool>false</bool>
                   </property>
-                  <property name="autoExclusive">
+                  <property name="probe" stdset="0">
+                   <string>probe_yp</string>
+                  </property>
+                  <attribute name="buttonGroup">
+                   <string notr="true">outside_buttonGroup</string>
+                  </attribute>
+                 </widget>
+                </item>
+                <item row="1" column="1">
+                 <widget class="PushButton" name="pbtn_outside_xpym">
+                  <property name="sizePolicy">
+                   <sizepolicy hsizetype="Fixed" vsizetype="Fixed">
+                    <horstretch>0</horstretch>
+                    <verstretch>0</verstretch>
+                   </sizepolicy>
+                  </property>
+                  <property name="minimumSize">
+                   <size>
+                    <width>60</width>
+                    <height>60</height>
+                   </size>
+                  </property>
+                  <property name="maximumSize">
+                   <size>
+                    <width>120</width>
+                    <height>120</height>
+                   </size>
+                  </property>
+                  <property name="sizeIncrement">
+                   <size>
+                    <width>0</width>
+                    <height>0</height>
+                   </size>
+                  </property>
+                  <property name="toolTip">
+                   <string>Probe Outside Edges, Finish At Corner</string>
+                  </property>
+                  <property name="text">
+                   <string/>
+                  </property>
+                  <property name="icon">
+                   <iconset>
+                    <normaloff>../images/probe_icons/X+Y-.png</normaloff>../images/probe_icons/X+Y-.png</iconset>
+                  </property>
+                  <property name="iconSize">
+                   <size>
+                    <width>120</width>
+                    <height>120</height>
+                   </size>
+                  </property>
+                  <property name="checkable">
+                   <bool>false</bool>
+                  </property>
+                  <property name="checked">
                    <bool>false</bool>
                   </property>
                   <property name="indicator_option" stdset="0">
                    <bool>false</bool>
                   </property>
                   <property name="probe" stdset="0">
-                   <string>probe_yp</string>
+                   <string>probe_outside_xpym</string>
                   </property>
                   <attribute name="buttonGroup">
                    <string notr="true">outside_buttonGroup</string>
@@ -1272,12 +1319,6 @@
                    <bool>false</bool>
                   </property>
                   <property name="checked">
-                   <bool>false</bool>
-                  </property>
-                  <property name="autoRepeat">
-                   <bool>true</bool>
-                  </property>
-                  <property name="autoExclusive">
                    <bool>false</bool>
                   </property>
                   <property name="indicator_option" stdset="0">
@@ -1337,9 +1378,6 @@
                    <bool>false</bool>
                   </property>
                   <property name="checked">
-                   <bool>false</bool>
-                  </property>
-                  <property name="autoExclusive">
                    <bool>false</bool>
                   </property>
                   <property name="indicator_option" stdset="0">
@@ -1417,9 +1455,6 @@
                   <property name="checked">
                    <bool>false</bool>
                   </property>
-                  <property name="autoExclusive">
-                   <bool>false</bool>
-                  </property>
                   <property name="indicator_option" stdset="0">
                    <bool>false</bool>
                   </property>
@@ -1477,9 +1512,6 @@
                    <bool>false</bool>
                   </property>
                   <property name="checked">
-                   <bool>false</bool>
-                  </property>
-                  <property name="autoExclusive">
                    <bool>false</bool>
                   </property>
                   <property name="indicator_option" stdset="0">
@@ -1542,12 +1574,9 @@
                    </size>
                   </property>
                   <property name="checkable">
-                   <bool>true</bool>
-                  </property>
-                  <property name="checked">
                    <bool>false</bool>
                   </property>
-                  <property name="autoExclusive">
+                  <property name="checked">
                    <bool>false</bool>
                   </property>
                   <property name="indicator_option" stdset="0">
@@ -1614,9 +1643,6 @@
                   <property name="checked">
                    <bool>false</bool>
                   </property>
-                  <property name="autoExclusive">
-                   <bool>false</bool>
-                  </property>
                   <property name="indicator_option" stdset="0">
                    <bool>false</bool>
                   </property>
@@ -1670,76 +1696,11 @@
                   <property name="checked">
                    <bool>false</bool>
                   </property>
-                  <property name="autoExclusive">
-                   <bool>false</bool>
-                  </property>
                   <property name="indicator_option" stdset="0">
                    <bool>false</bool>
                   </property>
                   <property name="probe" stdset="0">
                    <string>probe_down</string>
-                  </property>
-                  <attribute name="buttonGroup">
-                   <string notr="true">outside_buttonGroup</string>
-                  </attribute>
-                 </widget>
-                </item>
-                <item row="1" column="1">
-                 <widget class="PushButton" name="pbtn_outside_xpym">
-                  <property name="sizePolicy">
-                   <sizepolicy hsizetype="Fixed" vsizetype="Fixed">
-                    <horstretch>0</horstretch>
-                    <verstretch>0</verstretch>
-                   </sizepolicy>
-                  </property>
-                  <property name="minimumSize">
-                   <size>
-                    <width>60</width>
-                    <height>60</height>
-                   </size>
-                  </property>
-                  <property name="maximumSize">
-                   <size>
-                    <width>120</width>
-                    <height>120</height>
-                   </size>
-                  </property>
-                  <property name="sizeIncrement">
-                   <size>
-                    <width>0</width>
-                    <height>0</height>
-                   </size>
-                  </property>
-                  <property name="toolTip">
-                   <string>Probe Outside Edges, Finish At Corner</string>
-                  </property>
-                  <property name="text">
-                   <string/>
-                  </property>
-                  <property name="icon">
-                   <iconset>
-                    <normaloff>../images/probe_icons/X+Y-.png</normaloff>../images/probe_icons/X+Y-.png</iconset>
-                  </property>
-                  <property name="iconSize">
-                   <size>
-                    <width>120</width>
-                    <height>120</height>
-                   </size>
-                  </property>
-                  <property name="checkable">
-                   <bool>false</bool>
-                  </property>
-                  <property name="checked">
-                   <bool>false</bool>
-                  </property>
-                  <property name="autoExclusive">
-                   <bool>false</bool>
-                  </property>
-                  <property name="indicator_option" stdset="0">
-                   <bool>false</bool>
-                  </property>
-                  <property name="probe" stdset="0">
-                   <string>probe_outside_xpym</string>
                   </property>
                   <attribute name="buttonGroup">
                    <string notr="true">outside_buttonGroup</string>
@@ -3515,7 +3476,7 @@
                 <item row="3" column="1">
                  <widget class="PushButton" name="pbtn_measure_height">
                   <property name="enabled">
-                   <bool>true</bool>
+                   <bool>false</bool>
                   </property>
                   <property name="sizePolicy">
                    <sizepolicy hsizetype="Fixed" vsizetype="Fixed">
@@ -5496,7 +5457,7 @@
           <number>0</number>
          </property>
          <property name="bottomMargin">
-          <number>2</number>
+          <number>0</number>
          </property>
          <item>
           <widget class="QWidget" name="widget_set_angle" native="true">
@@ -5837,8 +5798,13 @@ ZERO</string>
  </widget>
  <customwidgets>
   <customwidget>
-   <class>PushButton</class>
+   <class>IndicatedPushButton</class>
    <extends>QPushButton</extends>
+   <header>qtvcp.widgets.simple_widgets</header>
+  </customwidget>
+  <customwidget>
+   <class>PushButton</class>
+   <extends>IndicatedPushButton</extends>
    <header>qtvcp.widgets.simple_widgets</header>
   </customwidget>
   <customwidget>
@@ -5941,25 +5907,25 @@ ZERO</string>
   <slot>input_next()</slot>
  </slots>
  <buttongroups>
-  <buttongroup name="skew_buttonGroup">
-   <property name="exclusive">
-    <bool>false</bool>
-   </property>
-  </buttongroup>
-  <buttongroup name="tool_buttonGroup"/>
-  <buttongroup name="inside_buttonGroup">
-   <property name="exclusive">
-    <bool>false</bool>
-   </property>
-  </buttongroup>
   <buttongroup name="length_buttonGroup">
    <property name="exclusive">
     <bool>false</bool>
    </property>
   </buttongroup>
+  <buttongroup name="skew_buttonGroup">
+   <property name="exclusive">
+    <bool>false</bool>
+   </property>
+  </buttongroup>
+  <buttongroup name="inside_buttonGroup">
+   <property name="exclusive">
+    <bool>false</bool>
+   </property>
+  </buttongroup>
+  <buttongroup name="tool_buttonGroup"/>
   <buttongroup name="outside_buttonGroup">
    <property name="exclusive">
-    <bool>true</bool>
+    <bool>false</bool>
    </property>
   </buttongroup>
  </buttongroups>

@@ -1093,6 +1093,12 @@ bool Pendant::onButtonPressedEvent(const MetaButtonCodes& metaButton)
         mHal.setMacro1(true);
         isHandled = true;
     }
+    else if (metaButton == KeyCodes::Meta.macro2)
+    {
+        mHal.toggleLubeOnOff(true);
+        mHal.setMacro2(true);
+        isHandled = true;
+    }
     else if (metaButton == KeyCodes::Meta.macro3)
     {
         mHal.setMacro3(true);
@@ -1253,6 +1259,12 @@ bool Pendant::onButtonReleasedEvent(const MetaButtonCodes& metaButton)
     else if (metaButton == KeyCodes::Meta.macro1)
     {
         mHal.setMacro1(false);
+        isHandled = true;
+    }
+    else if (metaButton == KeyCodes::Meta.macro2)
+    {
+        mHal.toggleLubeOnOff(false);
+        mHal.setMacro2(false);
         isHandled = true;
     }
     else if (metaButton == KeyCodes::Meta.macro3)

@@ -1,10 +1,7 @@
 #include "config.h"
 #include "rtapi.h"
 #include "rtapi_uspace.hh"
-#include <pthread.h>
-#include  <errno.h>
-#include <stdio.h>
-#include <cstring>
+#include <posix/pthread.h>
 #include <atomic>
 #ifdef HAVE_SYS_IO_H
 #include <sys/io.h>

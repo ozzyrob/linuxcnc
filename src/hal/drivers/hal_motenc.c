@@ -485,6 +485,7 @@ static int
 Device_ExportEncoderPinsParametersFunctions(Device *this, int componentId, int boardId)
 {
     int					halError, channel;
+    char				name[HAL_NAME_LEN + 1];
 
     // Export pins and parameters.
     halError = 0;
@@ -528,7 +529,8 @@ Device_ExportEncoderPinsParametersFunctions(Device *this, int componentId, int b
 
     // Export functions.
     if(!halError){
-	halError = hal_export_functf(Device_EncoderRead, this, 1, 0, componentId, "motenc.%d.encoder-read", boardId);
+	rtapi_snprintf(name, sizeof(name), "motenc.%d.encoder-read", boardId);
+	halError = hal_export_funct(name, Device_EncoderRead, this, 1, 0, componentId);
     }
 
     if(halError){
@@ -544,6 +546,7 @@ static int
 Device_ExportDacPinsParametersFunctions(Device *this, int componentId, int boardId)
 {
     int					halError, channel;
+    char				name[HAL_NAME_LEN + 1];
 
     // Export pins and parameters.
     halError = 0;
@@ -570,7 +573,8 @@ Device_ExportDacPinsParametersFunctions(Device *this, int componentId, int board
 
     // Export functions.
     if(!halError){
-	halError = hal_export_functf(Device_DacWrite, this, 1, 0, componentId, "motenc.%d.dac-write", boardId);
+	rtapi_snprintf(name, sizeof(name), "motenc.%d.dac-write", boardId);
+	halError = hal_export_funct(name, Device_DacWrite, this, 1, 0, componentId);
     }
 
     if(halError){
@@ -586,6 +590,7 @@ static int
 Device_ExportAdcPinsParametersFunctions(Device *this, int componentId, int boardId)
 {
     int					halError, channel;
+    char				name[HAL_NAME_LEN + 1];
 
     // Export pins and parameters.
     halError = 0;
@@ -612,7 +617,8 @@ Device_ExportAdcPinsParametersFunctions(Device *this, int componentId, int board
 
     // Export functions.
     if(!halError){
-	halError = hal_export_functf(Device_AdcRead, this, 1, 0, componentId, "motenc.%d.adc-read", boardId);
+	rtapi_snprintf(name, sizeof(name), "motenc.%d.adc-read", boardId);
+	halError = hal_export_funct(name, Device_AdcRead, this, 1, 0, componentId);
     }
 
     if(halError){
@@ -628,6 +634,7 @@ static int
 Device_ExportDigitalInPinsParametersFunctions(Device *this, int componentId, int boardId)
 {
     int					halError, channel;
+    char				name[HAL_NAME_LEN + 1];
 
     // Export pins and parameters.
     halError = 0;
@@ -648,7 +655,8 @@ Device_ExportDigitalInPinsParametersFunctions(Device *this, int componentId, int
 
     // Export functions.
     if(!halError){
-	halError = hal_export_functf(Device_DigitalInRead, this, 0, 0, componentId, "motenc.%d.digital-in-read", boardId);
+	rtapi_snprintf(name, sizeof(name), "motenc.%d.digital-in-read", boardId);
+	halError = hal_export_funct(name, Device_DigitalInRead, this, 0, 0, componentId);
     }
 
     if(halError){
@@ -664,6 +672,7 @@ static int
 Device_ExportDigitalOutPinsParametersFunctions(Device *this, int componentId, int boardId)
 {
     int					halError, channel;
+    char				name[HAL_NAME_LEN + 1];
 
     // Export pins and parameters.
     halError = 0;
@@ -685,7 +694,8 @@ Device_ExportDigitalOutPinsParametersFunctions(Device *this, int componentId, in
 
     // Export functions.
     if(!halError){
-	halError = hal_export_functf(Device_DigitalOutWrite, this, 0, 0, componentId, "motenc.%d.digital-out-write", boardId);
+	rtapi_snprintf(name, sizeof(name), "motenc.%d.digital-out-write", boardId);
+	halError = hal_export_funct(name, Device_DigitalOutWrite, this, 0, 0, componentId);
     }
 
     if(halError){
@@ -733,7 +743,8 @@ Device_ExportMiscPinsParametersFunctions(Device *this, int componentId, int boar
 
     // Export functions.
     if(!halError){
-	halError = hal_export_functf(Device_MiscUpdate, this, 0, 0, componentId, "motenc.%d.misc-update", boardId);
+	rtapi_snprintf(name, sizeof(name), "motenc.%d.misc-update", boardId);
+	halError = hal_export_funct(name, Device_MiscUpdate, this, 0, 0, componentId);
     }
 
     if(halError){

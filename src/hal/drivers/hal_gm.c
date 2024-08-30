@@ -1096,18 +1096,22 @@ ExportMixed(void *arg, int comp_id)
 static int ExportFunctions(void *arg, int comp_id, int boardId)
 {
 	int error;
+	char str[HAL_NAME_LEN + 1];
 	gm_device_t	*device = (gm_device_t *)arg;
 
-	error = hal_export_functf(write, device, 1, 0, comp_id, "gm.%d.write", boardId);
+	rtapi_snprintf(str, sizeof(str), "gm.%d.write", boardId);
+	error = hal_export_funct(str, write, device, 1, 0, comp_id);
 
 	if(error == 0)
 	{
-		error = hal_export_functf(read, device, 1, 0, comp_id, "gm.%d.read", boardId);
+		rtapi_snprintf(str, sizeof(str), "gm.%d.read", boardId);
+		error = hal_export_funct(str, read, device, 1, 0, comp_id);
 	}
 	
 	if(error == 0)
 	{
-		error = hal_export_functf(RS485, device, 1, 0, comp_id, "gm.%d.RS485", boardId);
+		rtapi_snprintf(str, sizeof(str), "gm.%d.RS485", boardId);
+		error = hal_export_funct(str, RS485, device, 1, 0, comp_id);
 	}
 
     	return error;
@@ -1840,7 +1844,7 @@ RS485(void *arg, long period)
 	  {
 	    if((device-> RS485_mgr.ID[2*i]) != ((temp_u32 >> 8) & 0xff)) 
             {
-              //RS485 module fell off, error
+              //RS485 module falled off, error
               if(failed == 0) //Msg only first time, do not put 100 error msg
               {
                 failed=1;
@@ -1854,7 +1858,7 @@ RS485(void *arg, long period)
 	  {
 	    if((device-> RS485_mgr.ID[2*i+1]) != ((temp_u32 & 0xff000000)>>24))
             {
-              //RS485 module fell off, error
+              //RS485 module falled off, error
               if(failed == 0) //Msg only first time, do not put 100 error msg
               {
                 failed=1; 

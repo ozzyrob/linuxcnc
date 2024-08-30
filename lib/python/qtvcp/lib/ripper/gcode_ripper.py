@@ -95,10 +95,20 @@
 version = '0.22'
 
 import sys
+VERSION = sys.version_info[0]
 
-from tkinter import *
-from tkinter.filedialog import *
-import tkinter.messagebox
+if VERSION == 3:
+    from tkinter import *
+    from tkinter.filedialog import *
+    import tkinter.messagebox
+else:
+    from Tkinter import *
+    from tkFileDialog import *
+    import tkMessageBox
+
+if VERSION < 3 and sys.version_info[1] < 6:
+    def next(item):
+        return item.next()
 
 try:
     import psyco
@@ -150,14 +160,26 @@ def debug_message(message):
     global DEBUG
     title = "Debug Message"
     if DEBUG:
-        tkinter.messagebox.showinfo(title,message)
+        if VERSION == 3:
+            tkinter.messagebox.showinfo(title,message)
+        else:
+            tkMessageBox.showinfo(title,message)
+            pass
         
 def message_box(title,message):
-    tkinter.messagebox.showinfo(title,message)
+    if VERSION == 3:
+        tkinter.messagebox.showinfo(title,message)
+    else:
+        tkMessageBox.showinfo(title,message)
+        pass
     
 def message_ask_ok_cancel(title, mess):
-    result=tkinter.messagebox.askokcancel(title, mess)
+    if VERSION == 3:
+        result=tkinter.messagebox.askokcancel(title, mess)
+    else:
+        result=tkMessageBox.askokcancel(title, mess)
     return result
+
 
 def error_message(message):
     error_report = Toplevel(width=525,height=60)
@@ -6030,7 +6052,7 @@ class G_Code_Rip:
         line = line.replace(" ","")
         
         #################################################
-        ###           G-CODE OPERATORS                ###
+        ###           G-CODE OPPERATORS               ###
         ###          In Precedence Order              ###
         #################################################
         ##    **                                        #

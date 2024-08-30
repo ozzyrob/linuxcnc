@@ -587,7 +587,7 @@ class Pages:
             index = 1
             self.w.lstStore1.set_value(treeiter, 0, index)
             index = index +1
-            # Cycle lstStore1 to update index
+            # Cicle lstStore1 to update index
             while treeiter != None:
                 treeiter = self.w.lstStore1.iter_next(treeiter)
                 if treeiter != None:

@@ -74,7 +74,7 @@ Once the decel-time has expired the carousel will, if it was moving forwards, re
 to the position marker, off of the arker and then bak on to the FWD edge. If moving in reverse
 it will continue off the marker and then reverse slowly on to the FWD edge.
 This algnment is only possible with a motor-vel controlled bidirectional carousel,
-Other combinations will be accepted but probably won't have the desired behaviour.
+Other combinations will be acepted but probably won't have the desired behaviour.
 Some tuning will be needed of align-dc and decel-time to achieve reliable operation.
 
 In the unusual case that the index and pulse signals do not align it is
@@ -306,26 +306,12 @@ FUNCTION(_){
     if (unhome && ! old_unhome) homed = 0;
     old_unhome = unhome;
 
-    enum State {
-        WAITING = 0,
-        DIR_CHOOSE = 1,
-        MOVE = 2,
-        REV_TIME = 3,
-        WAIT_STOP = 5,
-        BACK_UP_INDEX = 6,
-        BACK_OFF_INDEX = 7,
-        FINAL_MOVE_BACK = 8,
-        WAIT_ENABLE_FALSE = 9,
-        HOME_START = 10,
-        HOME_WAIT = 11,
-        JOG = 20,
-    };
     switch (state){
-    case WAITING: // waiting at start
+    case 0: // waiting at start
         motor_dir = 0;
         if (jog_fwd || (jog_rev && inst_dir == 2))  {
             if ((inst_code == 'I' || inst_code == 'E' || inst_code == 'C') && ! homed){
-                state = HOME_START;
+                state = 10;
                 break;
             }
             target = current_position + jog_fwd - jog_rev;
@@ -345,21 +331,21 @@ FUNCTION(_){
                 motor_dir = -1;
             }
             active = 1;
-            state = JOG;
+            state = 20;
             break;
         }
         motor_vel = hold_dc;
         if (! enable) return ;
         active = 1;
         if ((inst_code == 'I' || inst_code == 'E' || inst_code == 'C') && ! homed){
-            state = HOME_START;
+            state = 10;
             break;
         }
-        state = DIR_CHOOSE;
+        state = 1;
         ready = 0;
-    case DIR_CHOOSE: // choose direction
+    case 1: // choose direction
         if (mod_pocket < 1 || mod_pocket > inst_pockets) {
-            state = WAITING;
+            state = 0;
             return;
         }
         if (inst_dir == 2){
@@ -402,8 +388,8 @@ FUNCTION(_){
             motor_vel = fwd_dc;
             motor_dir = 1;
         }
-        state = MOVE;
-    case MOVE: // moving
+        state = 2;
+    case 2: // moving
         if ((current_position != mod_pocket) && enable){
             deb = debounce;
             return;
@@ -415,55 +401,55 @@ FUNCTION(_){
             motor_rev = 1;
             motor_vel = rev_dc;
             timer = rev_pulse;        
-            state = REV_TIME;
+            state = 3;
         } else if (decel_time > 0) {
             // stop and prepare for alignment
             motor_vel = 0;
             timer = decel_time;
-            state = WAIT_STOP;
+            state = 5;
         } else {
             motor_fwd = 0;
             motor_rev = 0;
             motor_vel = hold_dc;
             active = 0;
             if (enable && current_position == mod_pocket) ready = 1;
-            state = WAIT_ENABLE_FALSE;
+            state = 9;
         }
         break;
-    case REV_TIME: // timed reverse pulse
+    case 3: // timed reverse pulse
         timer -= fperiod;
         if (timer > 0) return;
-        state = WAIT_ENABLE_FALSE;
+        state = 9;
         motor_fwd = 0;
         motor_rev = 0;
         motor_vel = hold_dc;
         active = 0;
         if (enable) ready = 1;
         break;
-    case WAIT_STOP: //Waiting for carousel to stop
+    case 5: //Waiting for carousel to stop
         timer -= fperiod;
         if (timer > 0) return;
         if (align_dc == 0){
-            state = FINAL_MOVE_BACK;
+            state = 8;
             break;
         }
         motor_vel = -align_dc;
         if (motor_dir == 1) {
-            state = BACK_UP_INDEX;
+            state = 6;
         } else {
-            state = BACK_OFF_INDEX;
+            state = 7;
         }
         break;
-    case BACK_UP_INDEX: //backing up to index
+    case 6: //backing up to index
         if ( align_pin == 0 ) return;
-        state = BACK_OFF_INDEX;
+        state = 7;
         break;
-    case BACK_OFF_INDEX: //backing back off of index
+    case 7: //backing back off of index
         if ( align_pin != 0 ) return;
         motor_vel = align_dc;
-        state = FINAL_MOVE_BACK;
+        state = 8;
         break;
-    case FINAL_MOVE_BACK: // final move back to index
+    case 8: // final move back to index
         if ( align_pin == 0 ) return;
         motor_fwd = 0;
         motor_rev = 0;
@@ -471,18 +457,18 @@ FUNCTION(_){
         active = 0;
         // final safety check for in-position
         if (enable && current_position == mod_pocket) ready = 1;
-        state = WAIT_ENABLE_FALSE;
+        state = 9;
         break;
-    case WAIT_ENABLE_FALSE: //waiting for enable to go false
+    case 9: //waiting for enable to go false
         if (! ready && ! err_once){
             rtapi_print_msg(RTAPI_MSG_ERR, "The toolchanger has failed the final alignment check");
             err_once = 1;
         }
         if (enable) return;
         err_once = 0;
-        state = WAITING;
+        state = 0;
         break;
-    case HOME_START: // start of homing
+    case 10: // start of homing
         homed = 0;
         homing = 1;
         motor_fwd = 1;
@@ -492,8 +478,8 @@ FUNCTION(_){
         index_enable = 1;
         counts_target += scale * inst_pockets;
         old_index = 1; // ensure 0->1 cycle of home sensor
-        state = HOME_WAIT;
-    case HOME_WAIT: ;// waiting for index & pulse
+        state = 11;
+    case 11: ;// waiting for index & pulse
         int ind = 0;
         if (inst_code == 'C'){
             ind = sense(0);
@@ -511,15 +497,15 @@ FUNCTION(_){
             base_counts = counts - home_offset;
             counts_target = base_counts;
             if ( align_dc == 0) {
-                state = WAITING;
+                state = 0;
             } else { 
                 timer = decel_time;
-                state = WAIT_STOP;
+                state = 5;
             }
         }
         old_index = ind;
         break; // So that we don't see the tool1 pulse twice
-    case JOG: //jogging fwd/rev
+    case 20: //jogging fwd/rev
         if (current_position != target){
             deb = debounce;
             return;
@@ -535,9 +521,9 @@ FUNCTION(_){
         if (align_dc != 0) {
             motor_vel = -align_dc;
             timer = decel_time;
-            state = WAIT_STOP;
+            state = 5;
         } else {
-            state = WAITING;
+            state = 0;
         }
         break;
     }

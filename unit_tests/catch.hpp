@@ -10306,7 +10306,7 @@ namespace Catch {
             }
             void close() override {
                 TrackerBase::close();
-                // Generator interface only finds out if it has another item on actual move
+                // Generator interface only finds out if it has another item on atual move
                 if (m_runState == CompletedSuccessfully && m_generator->next()) {
                     m_children.clear();
                     m_runState = Executing;

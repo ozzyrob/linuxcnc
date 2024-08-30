@@ -230,17 +230,17 @@ static void setQueueStatus(queueStatusType qs) {
 
 bool isIdle()
 {
-   return ((emcStatus->task.interpState != EMC_TASK_INTERP::READING) && 
-          (emcStatus->task.interpState != EMC_TASK_INTERP::WAITING) &&
-          (emcStatus->task.interpState != EMC_TASK_INTERP::PAUSED));
+   return ((emcStatus->task.interpState != EMC_TASK_INTERP_READING) && 
+          (emcStatus->task.interpState != EMC_TASK_INTERP_WAITING) &&
+          (emcStatus->task.interpState != EMC_TASK_INTERP_PAUSED));
 }
 
 bool interlocksOk() {
-  if (emcStatus->task.state == EMC_TASK_STATE::ESTOP) {
+  if (emcStatus->task.state == EMC_TASK_STATE_ESTOP) {
     return false;
     }
 
-  if (emcStatus->task.state != EMC_TASK_STATE::ON) {
+  if (emcStatus->task.state != EMC_TASK_STATE_ON) {
     return false;
     }
   return true;

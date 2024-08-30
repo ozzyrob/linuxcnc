@@ -22,7 +22,6 @@
 #include <fcntl.h>
 #include <sys/mman.h>
 #include <string.h>
-#include "config.h"
 #include "rtapi_mutex.h"
 #include "tooldata.hh"
 
@@ -74,7 +73,7 @@ typedef struct {
 static char* tool_mmap_fname(void) {
     if (*filename) {return filename;}
     char* hdir = secure_getenv("HOME");
-    if (!hdir) { hdir = (char *) EMC2_TMP_DIR; }
+    if (!hdir) {hdir = (char*)"/tmp";}
     snprintf(filename,sizeof(filename),"%s/%s",hdir,TOOL_MMAP_FILENAME);
     return(filename);
 }
@@ -288,8 +287,7 @@ toolidx_t tooldata_get(CANON_TOOL_TABLE* pdata, int idx)
         exit(EXIT_FAILURE);
     }
     if (idx < 0 || idx >= CANON_POCKETS_MAX) {
-        // ui programs may query for nonexistent idx values
-        // and must handle this error
+        UNEXPECTED_MSG;
         return IDX_FAIL;
     }
 

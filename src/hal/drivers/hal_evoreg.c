@@ -134,6 +134,7 @@ static void update_port(void *arg, long period);
 
 int rtapi_app_main(void)
 {
+    char name[HAL_NAME_LEN + 1];
     int n,i , retval, num_dac, num_enc;
 
     unsigned int base=0x300;
@@ -254,8 +255,9 @@ int rtapi_app_main(void)
 
 
     /* STEP 4: export function */
-    retval = hal_export_functf(update_port, &(port_data_array[n]), 1, 0,
-	comp_id, "evoreg.%d.update", n + 1);
+    rtapi_snprintf(name, sizeof(name), "evoreg.%d.update", n + 1);
+    retval = hal_export_funct(name, update_port, &(port_data_array[n]), 1, 0,
+	comp_id);
     if (retval < 0) {
 	rtapi_print_msg(RTAPI_MSG_ERR,
 	    "EVOREG: ERROR: port %d write funct export failed\n", n + 1);

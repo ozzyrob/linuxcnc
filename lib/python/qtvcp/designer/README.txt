@@ -44,10 +44,10 @@ To enable LinuxCNC specific widgets to appear in Designer:
 The <pluginfile> is dependent on the type of LinuxCNC installation.
 
 For a package installation:
-    /usr/lib/python3/dist-packages/qtvcp/plugins/qtvcp_plugin.py
+    /usr/lib/python3/dist-packages/qtvcp/plugins/qtvcp_pluin.py
 
 For a RIP installation:
-    ~/linuxcnc-dev/lib/python/qtvcp/plugins/qtvcp_plugin.py
+    ~/linuxcnc-dev/lib/python/qtvcp/plugins/qtvcp_pluin.py
 
 Designer can now be run and the LinuxCNC widgets will be available.
 

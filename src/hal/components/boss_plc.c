@@ -201,7 +201,7 @@ typedef struct {
     hal_bit_t                   limitNeg;
 } Limit;
 
-static int Limit_Export(Limit *this, int compId, int id, char axis);
+static int Limit_Export(Limit *this, int compId, int id, char *name, char axis);
 static void Limit_Init(Limit *this);
 static BOOL Limit_IsActive(Limit *this);
 static void Limit_Refresh(Limit *this, hal_bit_t override);
@@ -225,7 +225,7 @@ typedef struct {
     hal_bit_t                   lastEnable;
 } Amp;
 
-static int Amp_Export(Amp *this, int compId, int id, char axis);
+static int Amp_Export(Amp *this, int compId, int id, char *name, char axis);
 static void Amp_Init(Amp *this);
 static void Amp_Refresh(Amp *this, long period, hal_u32_t readyDelay);
 
@@ -313,11 +313,11 @@ typedef struct {
 // These methods are used for initialization.
 static int Plc_Init(Plc *this);
 static int Plc_Export(Plc *this, int compId, int id);
-static int Plc_ExportFeed(Plc *this, int compId, int id);
-static int Plc_ExportLimits(Plc *this, int compId, int id);
-static int Plc_ExportAmps(Plc *this, int compId, int id);
-static int Plc_ExportSpindle(Plc *this, int compId, int id);
-static int Plc_ExportJog(Plc *this, int compId, int id);
+static int Plc_ExportFeed(Plc *this, int compId, int id, char *name);
+static int Plc_ExportLimits(Plc *this, int compId, int id, char *name);
+static int Plc_ExportAmps(Plc *this, int compId, int id, char *name);
+static int Plc_ExportSpindle(Plc *this, int compId, int id, char *name);
+static int Plc_ExportJog(Plc *this, int compId, int id, char *name);
 
 // These methods are exported to the HAL.
 static void Plc_Refresh(void *this, long period);
@@ -468,6 +468,7 @@ static int
 Plc_Export(Plc *this, int compId, int id)
 {
     int                         msgLevel, error;
+    char                        name[HAL_NAME_LEN + 1];
 
     // This function exports a lot of stuff, which results in a lot of
     // logging if msg_level is at INFO or ALL. So we save the current value
@@ -477,26 +478,27 @@ Plc_Export(Plc *this, int compId, int id)
     rtapi_set_msg_level(RTAPI_MSG_WARN);
 
     // Export pins and parameters.
-    error = Plc_ExportFeed(this, compId, id);
+    error = Plc_ExportFeed(this, compId, id, name);
 
     if(!error){
-        error = Plc_ExportLimits(this, compId, id);
+        error = Plc_ExportLimits(this, compId, id, name);
     }
 
     if(!error){
-        error = Plc_ExportAmps(this, compId, id);
+        error = Plc_ExportAmps(this, compId, id, name);
     }
 
     if(!error){
-        error = Plc_ExportSpindle(this, compId, id);
+        error = Plc_ExportSpindle(this, compId, id, name);
     }
     if(!error){
-        error = Plc_ExportJog(this, compId, id);
+        error = Plc_ExportJog(this, compId, id, name);
     }
 
     // Export functions.
     if(!error){
-        error = hal_export_functf(Plc_Refresh, this, 1, 0, compId, "boss_plc.%d.refresh", id);
+        rtapi_snprintf(name, sizeof(name), "boss_plc.%d.refresh", id);
+        error = hal_export_funct(name, Plc_Refresh, this, 1, 0, compId);
     }
 
     // Restore saved message level.
@@ -507,7 +509,7 @@ Plc_Export(Plc *this, int compId, int id)
 
 
 static int
-Plc_ExportFeed(Plc *this, int compId, int id)
+Plc_ExportFeed(Plc *this, int compId, int id, char *name)
 {
     int                         error;
 
@@ -576,7 +578,7 @@ Plc_ExportFeed(Plc *this, int compId, int id)
 
 
 static int
-Plc_ExportLimits(Plc *this, int compId, int id)
+Plc_ExportLimits(Plc *this, int compId, int id, char *name)
 {
     int                         error;
 
@@ -590,11 +592,11 @@ Plc_ExportLimits(Plc *this, int compId, int id)
     }
 
     if(!error){
-        error = Limit_Export(&this->xLimit, compId, id, axisNames[0]);
+        error = Limit_Export(&this->xLimit, compId, id, name, axisNames[0]);
     }
 
     if(!error){
-        error = Limit_Export(&this->yLimit, compId, id, axisNames[1]);
+        error = Limit_Export(&this->yLimit, compId, id, name, axisNames[1]);
     }
 
     if(!error){
@@ -640,7 +642,7 @@ Plc_ExportLimits(Plc *this, int compId, int id)
 
 
 static int
-Plc_ExportAmps(Plc *this, int compId, int id)
+Plc_ExportAmps(Plc *this, int compId, int id, char *name)
 {
     int                         error, i;
     Amp                         *pAmp;
@@ -650,7 +652,7 @@ Plc_ExportAmps(Plc *this, int compId, int id)
 
     pAmp = this->amps;
     for(i = 0; i < NUM_AXIS && !error; i++, pAmp++){
-        error = Amp_Export(pAmp, compId, id, axisNames[i]);
+        error = Amp_Export(pAmp, compId, id, name, axisNames[i]);
     }
 
     return(error);
@@ -658,7 +660,7 @@ Plc_ExportAmps(Plc *this, int compId, int id)
 
 
 static int
-Plc_ExportSpindle(Plc *this, int compId, int id)
+Plc_ExportSpindle(Plc *this, int compId, int id, char *name)
 {
     int                         error;
 
@@ -740,7 +742,7 @@ Plc_ExportSpindle(Plc *this, int compId, int id)
 
 
 static int
-Plc_ExportJog(Plc *this, int compId, int id)
+Plc_ExportJog(Plc *this, int compId, int id, char *name)
 {
     int                         error, i;
 
@@ -967,7 +969,7 @@ Plc_RefreshJog(Plc *this, long period)
  ******************************************************************************/
 
 static int
-Limit_Export(Limit *this, int compId, int id, char axis)
+Limit_Export(Limit *this, int compId, int id, char *name, char axis)
 {
     int                         error;
 
@@ -1082,7 +1084,7 @@ Limit_Refresh(Limit *this, hal_bit_t override)
  ******************************************************************************/
 
 static int
-Amp_Export(Amp *this, int compId, int id, char axis)
+Amp_Export(Amp *this, int compId, int id, char *name, char axis)
 {
     int                         error;
 

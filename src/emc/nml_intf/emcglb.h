@@ -42,7 +42,9 @@ extern "C" {
 
     // EMC_DEBUG_* flag definitions moved to debugflags.h
 
-    extern double emc_task_cycle_time;
+    extern double emc_task_cycle_time;	
+
+    extern double emc_io_cycle_time;
 
     extern int emc_task_interp_max_len;
 

@@ -33,6 +33,12 @@
 void EmcPose_update(CMS * cms, EmcPose * x);
 void CANON_TOOL_TABLE_update(CMS * cms, CANON_TOOL_TABLE * x);
 void PmCartesian_update(CMS * cms, PmCartesian * x);
+void initialize_PmCartesian(PmCartesian * x);
+void CANON_VECTOR_update(CMS * cms, CANON_VECTOR * x);
+void initialize_CANON_TOOL_TABLE(CANON_TOOL_TABLE * x);
+void initialize_EmcPose(EmcPose * x);
+void CANON_POSITION_update(CMS * cms, CANON_POSITION * x);
+void initialize_CANON_POSITION(CANON_POSITION * x);
 
 /*
 *	NML/CMS Format function : emcFormat
@@ -42,8 +48,35 @@ void PmCartesian_update(CMS * cms, PmCartesian * x);
 int emcFormat(NMLTYPE type, void *buffer, CMS * cms)
 {
     switch (type) {
+    case EMC_ABORT_TYPE:
+	((EMC_ABORT *) buffer)->update(cms);
+	break;
+    case EMC_AUX_ESTOP_RESET_TYPE:
+	((EMC_AUX_ESTOP_RESET *) buffer)->update(cms);
+	break;
+    case EMC_AUX_ESTOP_OFF_TYPE:
+	((EMC_AUX_ESTOP_OFF *) buffer)->update(cms);
+	break;
+    case EMC_AUX_ESTOP_ON_TYPE:
+	((EMC_AUX_ESTOP_ON *) buffer)->update(cms);
+	break;
     case EMC_AUX_STAT_TYPE:
 	((EMC_AUX_STAT *) buffer)->update(cms);
+	break;
+    case EMC_JOINT_ABORT_TYPE:
+	((EMC_JOINT_ABORT *) buffer)->update(cms);
+	break;
+    case EMC_JOINT_ACTIVATE_TYPE:
+	((EMC_JOINT_ACTIVATE *) buffer)->update(cms);
+	break;
+    case EMC_JOINT_DEACTIVATE_TYPE:
+	((EMC_JOINT_DEACTIVATE *) buffer)->update(cms);
+	break;
+    case EMC_JOINT_DISABLE_TYPE:
+	((EMC_JOINT_DISABLE *) buffer)->update(cms);
+	break;
+    case EMC_JOINT_ENABLE_TYPE:
+	((EMC_JOINT_ENABLE *) buffer)->update(cms);
 	break;
     case EMC_JOINT_HALT_TYPE:
 	((EMC_JOINT_HALT *) buffer)->update(cms);
@@ -53,6 +86,9 @@ int emcFormat(NMLTYPE type, void *buffer, CMS * cms)
 	break;
     case EMC_JOINT_UNHOME_TYPE:
 	((EMC_JOINT_UNHOME *) buffer)->update(cms);
+	break;
+    case EMC_JOINT_INIT_TYPE:
+	((EMC_JOINT_INIT *) buffer)->update(cms);
 	break;
     case EMC_JOG_CONT_TYPE:
 	((EMC_JOG_CONT *) buffer)->update(cms);
@@ -72,6 +108,9 @@ int emcFormat(NMLTYPE type, void *buffer, CMS * cms)
     case EMC_JOINT_OVERRIDE_LIMITS_TYPE:
 	((EMC_JOINT_OVERRIDE_LIMITS *) buffer)->update(cms);
 	break;
+    case EMC_JOINT_SET_JOINT_TYPE:
+	((EMC_JOINT_SET_JOINT *) buffer)->update(cms);
+	break;
     case EMC_JOINT_SET_FERROR_TYPE:
 	((EMC_JOINT_SET_FERROR *) buffer)->update(cms);
 	break;
@@ -84,11 +123,17 @@ int emcFormat(NMLTYPE type, void *buffer, CMS * cms)
     case EMC_JOINT_SET_MAX_POSITION_LIMIT_TYPE:
 	((EMC_JOINT_SET_MAX_POSITION_LIMIT *) buffer)->update(cms);
 	break;
+    case EMC_JOINT_SET_MAX_VELOCITY_TYPE:
+	((EMC_JOINT_SET_MAX_VELOCITY *) buffer)->update(cms);
+	break;
     case EMC_JOINT_SET_MIN_FERROR_TYPE:
 	((EMC_JOINT_SET_MIN_FERROR *) buffer)->update(cms);
 	break;
     case EMC_JOINT_SET_MIN_POSITION_LIMIT_TYPE:
 	((EMC_JOINT_SET_MIN_POSITION_LIMIT *) buffer)->update(cms);
+	break;
+    case EMC_JOINT_SET_UNITS_TYPE:
+	((EMC_JOINT_SET_UNITS *) buffer)->update(cms);
 	break;
     case EMC_JOINT_STAT_TYPE:
 	((EMC_JOINT_STAT *) buffer)->update(cms);
@@ -108,6 +153,45 @@ int emcFormat(NMLTYPE type, void *buffer, CMS * cms)
     case EMC_COOLANT_STAT_TYPE:
 	((EMC_COOLANT_STAT *) buffer)->update(cms);
 	break;
+    case EMC_HALT_TYPE:
+	((EMC_HALT *) buffer)->update(cms);
+	break;
+    case EMC_INIT_TYPE:
+	((EMC_INIT *) buffer)->update(cms);
+	break;
+    case EMC_IO_ABORT_TYPE:
+	((EMC_IO_ABORT *) buffer)->update(cms);
+	break;
+    case EMC_IO_HALT_TYPE:
+	((EMC_IO_HALT *) buffer)->update(cms);
+	break;
+    case EMC_IO_INIT_TYPE:
+	((EMC_IO_INIT *) buffer)->update(cms);
+	break;
+    case EMC_IO_SET_CYCLE_TIME_TYPE:
+	((EMC_IO_SET_CYCLE_TIME *) buffer)->update(cms);
+	break;
+    case EMC_IO_STAT_TYPE:
+	((EMC_IO_STAT *) buffer)->update(cms);
+	break;
+    case EMC_LUBE_OFF_TYPE:
+	((EMC_LUBE_OFF *) buffer)->update(cms);
+	break;
+    case EMC_LUBE_ON_TYPE:
+	((EMC_LUBE_ON *) buffer)->update(cms);
+	break;
+    case EMC_LUBE_STAT_TYPE:
+	((EMC_LUBE_STAT *) buffer)->update(cms);
+	break;
+    case EMC_MOTION_ABORT_TYPE:
+	((EMC_MOTION_ABORT *) buffer)->update(cms);
+	break;
+    case EMC_MOTION_HALT_TYPE:
+	((EMC_MOTION_HALT *) buffer)->update(cms);
+	break;
+    case EMC_MOTION_INIT_TYPE:
+	((EMC_MOTION_INIT *) buffer)->update(cms);
+	break;
     case EMC_MOTION_SET_AOUT_TYPE:
 	((EMC_MOTION_SET_AOUT *) buffer)->update(cms);
 	break;
@@ -116,6 +200,9 @@ int emcFormat(NMLTYPE type, void *buffer, CMS * cms)
 	break;
     case EMC_MOTION_ADAPTIVE_TYPE:
 	((EMC_MOTION_ADAPTIVE *) buffer)->update(cms);
+	break;
+    case EMC_MOTION_STAT_TYPE:
+	((EMC_MOTION_STAT *) buffer)->update(cms);
 	break;
     case EMC_NULL_TYPE:
 	((EMC_NULL *) buffer)->update(cms);
@@ -174,6 +261,12 @@ int emcFormat(NMLTYPE type, void *buffer, CMS * cms)
     case EMC_TASK_ABORT_TYPE:
 	((EMC_TASK_ABORT *) buffer)->update(cms);
 	break;
+    case EMC_TASK_HALT_TYPE:
+	((EMC_TASK_HALT *) buffer)->update(cms);
+	break;
+    case EMC_TASK_INIT_TYPE:
+	((EMC_TASK_INIT *) buffer)->update(cms);
+	break;
     case EMC_TASK_PLAN_CLOSE_TYPE:
 	((EMC_TASK_PLAN_CLOSE *) buffer)->update(cms);
 	break;
@@ -191,6 +284,9 @@ int emcFormat(NMLTYPE type, void *buffer, CMS * cms)
 	break;
     case EMC_TASK_PLAN_PAUSE_TYPE:
 	((EMC_TASK_PLAN_PAUSE *) buffer)->update(cms);
+	break;
+    case EMC_TASK_PLAN_READ_TYPE:
+	((EMC_TASK_PLAN_READ *) buffer)->update(cms);
 	break;
     case EMC_TASK_PLAN_RESUME_TYPE:
 	((EMC_TASK_PLAN_RESUME *) buffer)->update(cms);
@@ -228,6 +324,9 @@ int emcFormat(NMLTYPE type, void *buffer, CMS * cms)
     case EMC_TOOL_HALT_TYPE:
 	((EMC_TOOL_HALT *) buffer)->update(cms);
 	break;
+    case EMC_TOOL_INIT_TYPE:
+	((EMC_TOOL_INIT *) buffer)->update(cms);
+	break;
     case EMC_TOOL_LOAD_TYPE:
 	((EMC_TOOL_LOAD *) buffer)->update(cms);
 	break;
@@ -243,6 +342,9 @@ int emcFormat(NMLTYPE type, void *buffer, CMS * cms)
     case EMC_TOOL_SET_NUMBER_TYPE:
 	((EMC_TOOL_SET_NUMBER *) buffer)->update(cms);
 	break;
+    case EMC_TOOL_START_CHANGE_TYPE:
+	((EMC_TOOL_START_CHANGE *) buffer)->update(cms);
+	break;
     case EMC_TOOL_STAT_TYPE:
 	((EMC_TOOL_STAT *) buffer)->update(cms);
 	break;
@@ -257,6 +359,18 @@ int emcFormat(NMLTYPE type, void *buffer, CMS * cms)
 	break;
     case EMC_TRAJ_DELAY_TYPE:
 	((EMC_TRAJ_DELAY *) buffer)->update(cms);
+	break;
+    case EMC_TRAJ_DISABLE_TYPE:
+	((EMC_TRAJ_DISABLE *) buffer)->update(cms);
+	break;
+    case EMC_TRAJ_ENABLE_TYPE:
+	((EMC_TRAJ_ENABLE *) buffer)->update(cms);
+	break;
+    case EMC_TRAJ_HALT_TYPE:
+	((EMC_TRAJ_HALT *) buffer)->update(cms);
+	break;
+    case EMC_TRAJ_INIT_TYPE:
+	((EMC_TRAJ_INIT *) buffer)->update(cms);
 	break;
     case EMC_TRAJ_LINEAR_MOVE_TYPE:
 	((EMC_TRAJ_LINEAR_MOVE *) buffer)->update(cms);
@@ -282,11 +396,26 @@ int emcFormat(NMLTYPE type, void *buffer, CMS * cms)
     case EMC_TRAJ_SET_ACCELERATION_TYPE:
 	((EMC_TRAJ_SET_ACCELERATION *) buffer)->update(cms);
 	break;
+    case EMC_TRAJ_SET_AXES_TYPE:
+	((EMC_TRAJ_SET_AXES *) buffer)->update(cms);
+	break;
+    case EMC_TRAJ_SET_CYCLE_TIME_TYPE:
+	((EMC_TRAJ_SET_CYCLE_TIME *) buffer)->update(cms);
+	break;
+    case EMC_TRAJ_SET_HOME_TYPE:
+	((EMC_TRAJ_SET_HOME *) buffer)->update(cms);
+	break;
+    case EMC_TRAJ_SET_MAX_ACCELERATION_TYPE:
+	((EMC_TRAJ_SET_MAX_ACCELERATION *) buffer)->update(cms);
+	break;
     case EMC_TRAJ_SET_MAX_VELOCITY_TYPE:
 	((EMC_TRAJ_SET_MAX_VELOCITY *) buffer)->update(cms);
 	break;
     case EMC_TRAJ_SET_MODE_TYPE:
 	((EMC_TRAJ_SET_MODE *) buffer)->update(cms);
+	break;
+    case EMC_TRAJ_SET_MOTION_ID_TYPE:
+	((EMC_TRAJ_SET_MOTION_ID *) buffer)->update(cms);
 	break;
     case EMC_TRAJ_SET_OFFSET_TYPE:
 	((EMC_TRAJ_SET_OFFSET *) buffer)->update(cms);
@@ -327,12 +456,17 @@ int emcFormat(NMLTYPE type, void *buffer, CMS * cms)
     case EMC_TRAJ_SET_SPINDLESYNC_TYPE:
         ((EMC_TRAJ_SET_SPINDLESYNC *) buffer)->update(cms);
         break;
+    case EMC_TRAJ_SET_UNITS_TYPE:
+	((EMC_TRAJ_SET_UNITS *) buffer)->update(cms);
 	break;
     case EMC_TRAJ_SET_VELOCITY_TYPE:
 	((EMC_TRAJ_SET_VELOCITY *) buffer)->update(cms);
 	break;
     case EMC_TRAJ_STAT_TYPE:
 	((EMC_TRAJ_STAT *) buffer)->update(cms);
+	break;
+    case EMC_TRAJ_STEP_TYPE:
+	((EMC_TRAJ_STEP *) buffer)->update(cms);
 	break;
 
     default:
@@ -345,8 +479,28 @@ int emcFormat(NMLTYPE type, void *buffer, CMS * cms)
 const char *emc_symbol_lookup(uint32_t type)
 {
     switch (type) {
+    case EMC_ABORT_TYPE:
+	return "EMC_ABORT";
+    case EMC_EXEC_PLUGIN_CALL_TYPE:
+	return "EMC_EXEC_PLUGIN_CALL";
+    case EMC_AUX_ESTOP_RESET_TYPE:
+	return "EMC_AUX_ESTOP_RESET";
+    case EMC_AUX_ESTOP_OFF_TYPE:
+	return "EMC_AUX_ESTOP_OFF";
+    case EMC_AUX_ESTOP_ON_TYPE:
+	return "EMC_AUX_ESTOP_ON";
     case EMC_AUX_STAT_TYPE:
 	return "EMC_AUX_STAT";
+    case EMC_JOINT_ABORT_TYPE:
+	return "EMC_JOINT_ABORT";
+    case EMC_JOINT_ACTIVATE_TYPE:
+	return "EMC_JOINT_ACTIVATE";
+    case EMC_JOINT_DEACTIVATE_TYPE:
+	return "EMC_JOINT_DEACTIVATE";
+    case EMC_JOINT_DISABLE_TYPE:
+	return "EMC_JOINT_DISABLE";
+    case EMC_JOINT_ENABLE_TYPE:
+	return "EMC_JOINT_ENABLE";
     case EMC_JOINT_HALT_TYPE:
 	return "EMC_JOINT_HALT";
     case EMC_JOINT_HOME_TYPE:
@@ -361,10 +515,14 @@ const char *emc_symbol_lookup(uint32_t type)
 	return "EMC_JOG_ABS";
     case EMC_JOG_STOP_TYPE:
 	return "EMC_JOG_STOP";
+    case EMC_JOINT_INIT_TYPE:
+	return "EMC_JOINT_INIT";
     case EMC_JOINT_LOAD_COMP_TYPE:
 	return "EMC_JOINT_LOAD_COMP";
     case EMC_JOINT_OVERRIDE_LIMITS_TYPE:
 	return "EMC_JOINT_OVERRIDE_LIMITS";
+    case EMC_JOINT_SET_JOINT_TYPE:
+	return "EMC_JOINT_SET_AXIS";
     case EMC_JOINT_SET_FERROR_TYPE:
 	return "EMC_JOINT_SET_FERROR";
     case EMC_JOINT_SET_BACKLASH_TYPE:
@@ -373,10 +531,14 @@ const char *emc_symbol_lookup(uint32_t type)
 	return "EMC_JOINT_SET_HOMING_PARAMS";
     case EMC_JOINT_SET_MAX_POSITION_LIMIT_TYPE:
 	return "EMC_JOINT_SET_MAX_POSITION_LIMIT";
+    case EMC_JOINT_SET_MAX_VELOCITY_TYPE:
+	return "EMC_JOINT_SET_MAX_VELOCITY";
     case EMC_JOINT_SET_MIN_FERROR_TYPE:
 	return "EMC_JOINT_SET_MIN_FERROR";
     case EMC_JOINT_SET_MIN_POSITION_LIMIT_TYPE:
 	return "EMC_JOINT_SET_MIN_POSITION_LIMIT";
+    case EMC_JOINT_SET_UNITS_TYPE:
+	return "EMC_JOINT_SET_UNITS";
     case EMC_JOINT_STAT_TYPE:
 	return "EMC_JOINT_STAT";
     case EMC_COOLANT_FLOOD_OFF_TYPE:
@@ -389,8 +551,32 @@ const char *emc_symbol_lookup(uint32_t type)
 	return "EMC_COOLANT_MIST_ON";
     case EMC_COOLANT_STAT_TYPE:
 	return "EMC_COOLANT_STAT";
+    case EMC_HALT_TYPE:
+	return "EMC_HALT";
+    case EMC_INIT_TYPE:
+	return "EMC_INIT";
+    case EMC_IO_ABORT_TYPE:
+	return "EMC_IO_ABORT";
+    case EMC_IO_HALT_TYPE:
+	return "EMC_IO_HALT";
+    case EMC_IO_INIT_TYPE:
+	return "EMC_IO_INIT";
+    case EMC_IO_SET_CYCLE_TIME_TYPE:
+	return "EMC_IO_SET_CYCLE_TIME";
     case EMC_IO_STAT_TYPE:
 	return "EMC_IO_STAT";
+    case EMC_LUBE_OFF_TYPE:
+	return "EMC_LUBE_OFF";
+    case EMC_LUBE_ON_TYPE:
+	return "EMC_LUBE_ON";
+    case EMC_LUBE_STAT_TYPE:
+	return "EMC_LUBE_STAT";
+    case EMC_MOTION_ABORT_TYPE:
+	return "EMC_MOTION_ABORT";
+    case EMC_MOTION_HALT_TYPE:
+	return "EMC_MOTION_HALT";
+    case EMC_MOTION_INIT_TYPE:
+	return "EMC_MOTION_INIT";
     case EMC_MOTION_SET_AOUT_TYPE:
 	return "EMC_MOTION_SET_AOUT";
     case EMC_MOTION_SET_DOUT_TYPE:
@@ -437,6 +623,10 @@ const char *emc_symbol_lookup(uint32_t type)
 	return "EMC_STAT";
     case EMC_TASK_ABORT_TYPE:
 	return "EMC_TASK_ABORT";
+    case EMC_TASK_HALT_TYPE:
+	return "EMC_TASK_HALT";
+    case EMC_TASK_INIT_TYPE:
+	return "EMC_TASK_INIT";
     case EMC_TASK_PLAN_CLOSE_TYPE:
 	return "EMC_TASK_PLAN_CLOSE";
     case EMC_TASK_PLAN_END_TYPE:
@@ -449,6 +639,8 @@ const char *emc_symbol_lookup(uint32_t type)
 	return "EMC_TASK_PLAN_OPEN";
     case EMC_TASK_PLAN_PAUSE_TYPE:
 	return "EMC_TASK_PLAN_PAUSE";
+    case EMC_TASK_PLAN_READ_TYPE:
+	return "EMC_TASK_PLAN_READ";
     case EMC_TASK_PLAN_RESUME_TYPE:
 	return "EMC_TASK_PLAN_RESUME";
     case EMC_TASK_PLAN_RUN_TYPE:
@@ -473,6 +665,8 @@ const char *emc_symbol_lookup(uint32_t type)
 	return "EMC_TOOL_ABORT";
     case EMC_TOOL_HALT_TYPE:
 	return "EMC_TOOL_HALT";
+    case EMC_TOOL_INIT_TYPE:
+	return "EMC_TOOL_INIT";
     case EMC_TOOL_LOAD_TYPE:
 	return "EMC_TOOL_LOAD";
     case EMC_TOOL_LOAD_TOOL_TABLE_TYPE:
@@ -483,6 +677,8 @@ const char *emc_symbol_lookup(uint32_t type)
 	return "EMC_TOOL_SET_OFFSET";
     case EMC_TOOL_SET_NUMBER_TYPE:
 	return "EMC_TOOL_SET_NUMBER";
+    case EMC_TOOL_START_CHANGE_TYPE:
+        return "EMC_TOOL_START_CHANGE";
     case EMC_TOOL_STAT_TYPE:
 	return "EMC_TOOL_STAT";
     case EMC_TOOL_UNLOAD_TYPE:
@@ -495,6 +691,14 @@ const char *emc_symbol_lookup(uint32_t type)
 	return "EMC_TRAJ_CLEAR_PROBE_TRIPPED_FLAG";
     case EMC_TRAJ_DELAY_TYPE:
 	return "EMC_TRAJ_DELAY";
+    case EMC_TRAJ_DISABLE_TYPE:
+	return "EMC_TRAJ_DISABLE";
+    case EMC_TRAJ_ENABLE_TYPE:
+	return "EMC_TRAJ_ENABLE";
+    case EMC_TRAJ_HALT_TYPE:
+	return "EMC_TRAJ_HALT";
+    case EMC_TRAJ_INIT_TYPE:
+	return "EMC_TRAJ_INIT";
     case EMC_TRAJ_LINEAR_MOVE_TYPE:
 	return "EMC_TRAJ_LINEAR_MOVE";
     case EMC_TRAJ_PAUSE_TYPE:
@@ -509,10 +713,20 @@ const char *emc_symbol_lookup(uint32_t type)
 	return "EMC_TRAJ_RESUME";
     case EMC_TRAJ_SET_ACCELERATION_TYPE:
 	return "EMC_TRAJ_SET_ACCELERATION";
+    case EMC_TRAJ_SET_AXES_TYPE:
+	return "EMC_TRAJ_SET_AXES";
+    case EMC_TRAJ_SET_CYCLE_TIME_TYPE:
+	return "EMC_TRAJ_SET_CYCLE_TIME";
+    case EMC_TRAJ_SET_HOME_TYPE:
+	return "EMC_TRAJ_SET_HOME";
+    case EMC_TRAJ_SET_MAX_ACCELERATION_TYPE:
+	return "EMC_TRAJ_SET_MAX_ACCELERATION";
     case EMC_TRAJ_SET_MAX_VELOCITY_TYPE:
 	return "EMC_TRAJ_SET_MAX_VELOCITY";
     case EMC_TRAJ_SET_MODE_TYPE:
 	return "EMC_TRAJ_SET_MODE";
+    case EMC_TRAJ_SET_MOTION_ID_TYPE:
+	return "EMC_TRAJ_SET_MOTION_ID";
     case EMC_TRAJ_SET_OFFSET_TYPE:
 	return "EMC_TRAJ_SET_OFFSET";
     case EMC_TRAJ_SET_G5X_TYPE:
@@ -539,10 +753,14 @@ const char *emc_symbol_lookup(uint32_t type)
 	return "EMC_TRAJ_SET_TERM_COND";
     case EMC_TRAJ_SET_SPINDLESYNC_TYPE:
 	return "EMC_TRAJ_SET_SPINDLESYNC";
+    case EMC_TRAJ_SET_UNITS_TYPE:
+	return "EMC_TRAJ_SET_UNITS";
     case EMC_TRAJ_SET_VELOCITY_TYPE:
 	return "EMC_TRAJ_SET_VELOCITY";
     case EMC_TRAJ_STAT_TYPE:
 	return "EMC_TRAJ_STAT";
+    case EMC_TRAJ_STEP_TYPE:
+	return "EMC_TRAJ_STEP";
     default:
 	return "UNKNOWN";
 	break;
@@ -557,7 +775,9 @@ const char *emc_symbol_lookup(uint32_t type)
 */
 void EMC_TASK_PLAN_CLOSE::update(CMS * cms)
 {
+
     EMC_TASK_CMD_MSG::update(cms);
+
 }
 
 /*
@@ -567,12 +787,15 @@ void EMC_TASK_PLAN_CLOSE::update(CMS * cms)
 */
 void EMC_IO_STAT::update(CMS * cms)
 {
+
+    EMC_IO_STAT_MSG::update(cms);
+    cms->update(cycleTime);
     cms->update(debug);
-    cms->update(reason);
-    cms->update(fault);
     tool.update(cms);
     coolant.update(cms);
     aux.update(cms);
+    lube.update(cms);
+
 }
 
 /*
@@ -582,6 +805,19 @@ void EMC_IO_STAT::update(CMS * cms)
 */
 void EMC_SPINDLE_STAT_MSG::update(CMS * cms)
 {
+
+}
+
+/*
+*	NML/CMS Update function for EMC_TRAJ_SET_HOME
+*	Automatically generated by NML CodeGen Java Applet.
+*	on Sat Oct 11 13:45:16 UTC 2003
+*/
+void EMC_TRAJ_SET_HOME::update(CMS * cms)
+{
+
+    EMC_TRAJ_CMD_MSG::update(cms);
+    EmcPose_update(cms, &home);
 
 }
 
@@ -596,13 +832,40 @@ void EMC_CMD_MSG::update(CMS * cms)
 }
 
 /*
+*	NML/CMS Update function for EMC_AUX_ESTOP_RESET
+*	Automatically generated by AJ.
+*	on Sun Oct 13 23:46:26 GMT+2 2005
+*/
+void EMC_AUX_ESTOP_RESET::update(CMS * cms)
+{
+
+    EMC_AUX_CMD_MSG::update(cms);
+
+}
+
+
+/*
+*	NML/CMS Update function for EMC_AUX_ESTOP_OFF
+*	Automatically generated by NML CodeGen Java Applet.
+*	on Sat Oct 11 13:45:16 UTC 2003
+*/
+void EMC_AUX_ESTOP_OFF::update(CMS * cms)
+{
+
+    EMC_AUX_CMD_MSG::update(cms);
+
+}
+
+/*
 *	NML/CMS Update function for EMC_OPERATOR_DISPLAY
 *	Automatically generated by NML CodeGen Java Applet.
 *	on Sat Oct 11 13:45:16 UTC 2003
 */
 void EMC_OPERATOR_DISPLAY::update(CMS * cms)
 {
-    cms->update(display, LINELEN);
+    cms->update(id);
+    cms->update(display, 256);
+
 }
 
 /*
@@ -612,7 +875,7 @@ void EMC_OPERATOR_DISPLAY::update(CMS * cms)
 */
 void EMC_SYSTEM_CMD::update(CMS * cms)
 {
-    cms->update(string, EMC_SYSTEM_CMD_LEN);
+    cms->update(string, 256);
 }
 
 /*
@@ -622,7 +885,9 @@ void EMC_SYSTEM_CMD::update(CMS * cms)
 */
 void EMC_TRAJ_CLEAR_PROBE_TRIPPED_FLAG::update(CMS * cms)
 {
+
     EMC_TRAJ_CMD_MSG::update(cms);
+
 }
 
 /*
@@ -632,6 +897,7 @@ void EMC_TRAJ_CLEAR_PROBE_TRIPPED_FLAG::update(CMS * cms)
 */
 void EMC_TOOL_STAT::update(CMS * cms)
 {
+
     EMC_TOOL_STAT_MSG::update(cms);
     cms->update(pocketPrepped); // idx
     cms->update(toolInSpindle);
@@ -645,15 +911,41 @@ void EMC_TOOL_STAT::update(CMS * cms)
 }
 
 /*
+*	NML/CMS Update function for EMC_MOTION_INIT
+*	Automatically generated by NML CodeGen Java Applet.
+*	on Sat Oct 11 13:45:16 UTC 2003
+*/
+void EMC_MOTION_INIT::update(CMS * cms)
+{
+
+    EMC_MOTION_CMD_MSG::update(cms);
+
+}
+
+/*
+*	NML/CMS Update function for EMC_JOINT_SET_UNITS
+*	Automatically generated by NML CodeGen Java Applet.
+*	on Sat Oct 11 13:45:16 UTC 2003
+*/
+void EMC_JOINT_SET_UNITS::update(CMS * cms)
+{
+
+    EMC_JOINT_CMD_MSG::update(cms);
+    cms->update(units);
+
+}
+
+/*
 *	NML/CMS Update function for EMC_SPINDLE_CONSTANT
 *	Automatically generated by NML CodeGen Java Applet.
 *	on Sat Oct 11 13:45:16 UTC 2003
 */
 void EMC_SPINDLE_CONSTANT::update(CMS * cms)
 {
+
     EMC_SPINDLE_CMD_MSG::update(cms);
-    cms->update(spindle);
     cms->update(speed);
+
 }
 
 /*
@@ -663,7 +955,7 @@ void EMC_SPINDLE_CONSTANT::update(CMS * cms)
 */
 void EMC_SPINDLE_CMD_MSG::update(CMS * cms)
 {
-    cms->update(spindle);
+
 }
 
 /*
@@ -673,8 +965,10 @@ void EMC_SPINDLE_CMD_MSG::update(CMS * cms)
 */
 void EMC_TRAJ_DELAY::update(CMS * cms)
 {
+
     EMC_TRAJ_CMD_MSG::update(cms);
     cms->update(delay);
+
 }
 
 /*
@@ -682,6 +976,7 @@ void EMC_TRAJ_DELAY::update(CMS * cms)
 */
 void EMC_JOG_ABS::update(CMS * cms)
 {
+
     EMC_JOG_CMD_MSG::update(cms);
     cms->update(pos);
     cms->update(vel);
@@ -694,8 +989,20 @@ void EMC_JOG_ABS::update(CMS * cms)
 */
 void EMC_JOG_STOP::update(CMS * cms)
 {
+
     EMC_JOG_CMD_MSG::update(cms);
     cms->update(jjogmode);
+
+}
+
+/*
+*	NML/CMS Update function for EMC_LUBE_CMD_MSG
+*	Automatically generated by NML CodeGen Java Applet.
+*	on Sat Oct 11 13:45:16 UTC 2003
+*/
+void EMC_LUBE_CMD_MSG::update(CMS * cms)
+{
+
 }
 
 /*
@@ -705,8 +1012,10 @@ void EMC_JOG_STOP::update(CMS * cms)
 */
 void EMC_TOOL_PREPARE::update(CMS * cms)
 {
+
     EMC_TOOL_CMD_MSG::update(cms);
     cms->update(tool);
+
 }
 
 /*
@@ -716,8 +1025,9 @@ void EMC_TOOL_PREPARE::update(CMS * cms)
 */
 void EMC_SPINDLE_OFF::update(CMS * cms)
 {
+
     EMC_SPINDLE_CMD_MSG::update(cms);
-    cms->update(spindle);
+
 }
 
 /*
@@ -727,7 +1037,9 @@ void EMC_SPINDLE_OFF::update(CMS * cms)
 */
 void EMC_TASK_PLAN_SYNCH::update(CMS * cms)
 {
+
     EMC_TASK_CMD_MSG::update(cms);
+
 }
 
 /*
@@ -741,13 +1053,27 @@ void EMC_COOLANT_CMD_MSG::update(CMS * cms)
 }
 
 /*
+*	NML/CMS Update function for EMC_TRAJ_HALT
+*	Automatically generated by NML CodeGen Java Applet.
+*	on Sat Oct 11 13:45:16 UTC 2003
+*/
+void EMC_TRAJ_HALT::update(CMS * cms)
+{
+
+    EMC_TRAJ_CMD_MSG::update(cms);
+
+}
+
+/*
 *	NML/CMS Update function for EMC_TOOL_LOAD
 *	Automatically generated by NML CodeGen Java Applet.
 *	on Sat Oct 11 13:45:16 UTC 2003
 */
 void EMC_TOOL_LOAD::update(CMS * cms)
 {
+
     EMC_TOOL_CMD_MSG::update(cms);
+
 }
 
 /*
@@ -757,7 +1083,9 @@ void EMC_TOOL_LOAD::update(CMS * cms)
 */
 void EMC_JOINT_OVERRIDE_LIMITS::update(CMS * cms)
 {
+
     EMC_JOINT_CMD_MSG::update(cms);
+
 }
 
 /*
@@ -770,6 +1098,7 @@ void PmCartesian_update(CMS * cms, PmCartesian * x)
     cms->update(x->x);
     cms->update(x->y);
     cms->update(x->z);
+
 }
 
 /*
@@ -779,8 +1108,10 @@ void PmCartesian_update(CMS * cms, PmCartesian * x)
 */
 void EMC_JOINT_SET_FERROR::update(CMS * cms)
 {
+
     EMC_JOINT_CMD_MSG::update(cms);
     cms->update(ferror);
+
 }
 
 /*
@@ -790,8 +1121,22 @@ void EMC_JOINT_SET_FERROR::update(CMS * cms)
 */
 void EMC_JOINT_SET_MIN_POSITION_LIMIT::update(CMS * cms)
 {
+
     EMC_JOINT_CMD_MSG::update(cms);
     cms->update(limit);
+
+}
+
+/*
+*	NML/CMS Update function for EMC_JOINT_DEACTIVATE
+*	Automatically generated by NML CodeGen Java Applet.
+*	on Sat Oct 11 13:45:16 UTC 2003
+*/
+void EMC_JOINT_DEACTIVATE::update(CMS * cms)
+{
+
+    EMC_JOINT_CMD_MSG::update(cms);
+
 }
 
 /*
@@ -801,9 +1146,11 @@ void EMC_JOINT_SET_MIN_POSITION_LIMIT::update(CMS * cms)
 */
 void EMC_TRAJ_SET_VELOCITY::update(CMS * cms)
 {
+
     EMC_TRAJ_CMD_MSG::update(cms);
     cms->update(velocity);
     cms->update(ini_maxvel);
+
 }
 
 /*
@@ -813,7 +1160,34 @@ void EMC_TRAJ_SET_VELOCITY::update(CMS * cms)
 */
 void EMC_TASK_ABORT::update(CMS * cms)
 {
+
     EMC_TASK_CMD_MSG::update(cms);
+
+}
+
+/*
+*	NML/CMS Update function for EMC_TRAJ_SET_MOTION_ID
+*	Automatically generated by NML CodeGen Java Applet.
+*	on Sat Oct 11 13:45:16 UTC 2003
+*/
+void EMC_TRAJ_SET_MOTION_ID::update(CMS * cms)
+{
+
+    EMC_TRAJ_CMD_MSG::update(cms);
+    cms->update(id);
+
+}
+
+/*
+*	NML/CMS Update function for EMC_MOTION_HALT
+*	Automatically generated by NML CodeGen Java Applet.
+*	on Sat Oct 11 13:45:16 UTC 2003
+*/
+void EMC_MOTION_HALT::update(CMS * cms)
+{
+
+    EMC_MOTION_CMD_MSG::update(cms);
+
 }
 
 /*
@@ -823,7 +1197,9 @@ void EMC_TASK_ABORT::update(CMS * cms)
 */
 void EMC_TASK_PLAN_INIT::update(CMS * cms)
 {
+
     EMC_TASK_CMD_MSG::update(cms);
+
 }
 
 /*
@@ -833,8 +1209,10 @@ void EMC_TASK_PLAN_INIT::update(CMS * cms)
 */
 void EMC_TRAJ_SET_ACCELERATION::update(CMS * cms)
 {
+
     EMC_TRAJ_CMD_MSG::update(cms);
     cms->update(acceleration);
+
 }
 
 /*
@@ -844,8 +1222,10 @@ void EMC_TRAJ_SET_ACCELERATION::update(CMS * cms)
 */
 void EMC_AUX_STAT::update(CMS * cms)
 {
+
     EMC_AUX_STAT_MSG::update(cms);
     cms->update(estop);
+
 }
 
 /*
@@ -856,6 +1236,30 @@ void EMC_AUX_STAT::update(CMS * cms)
 void EMC_TASK_STAT_MSG::update(CMS * cms)
 {
     cms->update(heartbeat);
+
+}
+
+/*
+*	NML/CMS Update function for EMC_TRAJ_SET_CYCLE_TIME
+*	Automatically generated by NML CodeGen Java Applet.
+*	on Sat Oct 11 13:45:16 UTC 2003
+*/
+void EMC_TRAJ_SET_CYCLE_TIME::update(CMS * cms)
+{
+
+    EMC_TRAJ_CMD_MSG::update(cms);
+    cms->update(cycleTime);
+
+}
+
+/*
+*	NML/CMS Update function for EMC_IO_CMD_MSG
+*	Automatically generated by NML CodeGen Java Applet.
+*	on Sat Oct 11 13:45:16 UTC 2003
+*/
+void EMC_IO_CMD_MSG::update(CMS * cms)
+{
+
 }
 
 /*
@@ -866,12 +1270,26 @@ void EMC_TASK_STAT_MSG::update(CMS * cms)
 void EMC_JOINT_CMD_MSG::update(CMS * cms)
 {
     cms->update(joint);
+
 }
 
 
 void EMC_JOG_CMD_MSG::update(CMS * cms)
 {
     cms->update(joint_or_axis);
+
+}
+
+/*
+*	NML/CMS Update function for EMC_IO_INIT
+*	Automatically generated by NML CodeGen Java Applet.
+*	on Sat Oct 11 13:45:16 UTC 2003
+*/
+void EMC_IO_INIT::update(CMS * cms)
+{
+
+    EMC_IO_CMD_MSG::update(cms);
+
 }
 
 /*
@@ -881,11 +1299,13 @@ void EMC_JOG_CMD_MSG::update(CMS * cms)
 */
 void EMC_STAT::update(CMS * cms)
 {
+
     EMC_STAT_MSG::update(cms);
     task.update(cms);
     motion.update(cms);
     io.update(cms);
     cms->update(debug);
+
 }
 
 /*
@@ -893,9 +1313,48 @@ void EMC_STAT::update(CMS * cms)
 */
 void EMC_JOG_CONT::update(CMS * cms)
 {
+
     EMC_JOG_CMD_MSG::update(cms);
     cms->update(vel);
     cms->update(jjogmode);
+
+}
+
+/*
+*	NML/CMS Update function for CANON_VECTOR
+*	Automatically generated by NML CodeGen Java Applet.
+*	on Sat Oct 11 13:45:16 UTC 2003
+*/
+void CANON_VECTOR_update(CMS * cms, CANON_VECTOR * x)
+{
+    cms->update(x->x);
+    cms->update(x->y);
+    cms->update(x->z);
+
+}
+
+/*
+*	NML/CMS Update function for EMC_TOOL_INIT
+*	Automatically generated by NML CodeGen Java Applet.
+*	on Sat Oct 11 13:45:16 UTC 2003
+*/
+void EMC_TOOL_INIT::update(CMS * cms)
+{
+
+    EMC_TOOL_CMD_MSG::update(cms);
+
+}
+
+/*
+*	NML/CMS Update function for EMC_TRAJ_ENABLE
+*	Automatically generated by NML CodeGen Java Applet.
+*	on Sat Oct 11 13:45:16 UTC 2003
+*/
+void EMC_TRAJ_ENABLE::update(CMS * cms)
+{
+
+    EMC_TRAJ_CMD_MSG::update(cms);
+
 }
 
 /*
@@ -905,11 +1364,13 @@ void EMC_JOG_CONT::update(CMS * cms)
 */
 void EMC_MOTION_SET_AOUT::update(CMS * cms)
 {
+
     EMC_MOTION_CMD_MSG::update(cms);
     cms->update(index);
     cms->update(start);
     cms->update(end);
     cms->update(now);
+
 }
 
 /*
@@ -923,13 +1384,40 @@ void EMC_COOLANT_STAT_MSG::update(CMS * cms)
 }
 
 /*
+*	NML/CMS Update function for EMC_MOTION_ABORT
+*	Automatically generated by NML CodeGen Java Applet.
+*	on Sat Oct 11 13:45:16 UTC 2003
+*/
+void EMC_MOTION_ABORT::update(CMS * cms)
+{
+
+    EMC_MOTION_CMD_MSG::update(cms);
+
+}
+
+/*
 *	NML/CMS Update function for EMC_TRAJ_RESUME
 *	Automatically generated by NML CodeGen Java Applet.
 *	on Sat Oct 11 13:45:16 UTC 2003
 */
 void EMC_TRAJ_RESUME::update(CMS * cms)
 {
+
     EMC_TRAJ_CMD_MSG::update(cms);
+
+}
+
+/*
+*	NML/CMS Update function for EMC_JOINT_SET_JOINT
+*	Automatically generated by NML CodeGen Java Applet.
+*	on Sat Oct 11 13:45:16 UTC 2003
+*/
+void EMC_JOINT_SET_JOINT::update(CMS * cms)
+{
+
+    EMC_JOINT_CMD_MSG::update(cms);
+    cms->update(jointType);
+
 }
 
 /*
@@ -939,7 +1427,9 @@ void EMC_TRAJ_RESUME::update(CMS * cms)
 */
 void EMC_TRAJ_ABORT::update(CMS * cms)
 {
+
     EMC_TRAJ_CMD_MSG::update(cms);
+
 }
 
 /*
@@ -949,6 +1439,7 @@ void EMC_TRAJ_ABORT::update(CMS * cms)
 */
 void EMC_TOOL_SET_OFFSET::update(CMS * cms)
 {
+
     EMC_TOOL_CMD_MSG::update(cms);
     cms->update(pocket);
     cms->update(toolno);
@@ -967,8 +1458,20 @@ void EMC_TOOL_SET_OFFSET::update(CMS * cms)
 */
 void EMC_TOOL_SET_NUMBER::update(CMS * cms)
 {
+
     EMC_TOOL_CMD_MSG::update(cms);
     cms->update(tool);
+}
+
+/*
+*	NML/CMS Update function for EMC_TOOL_START_CHANGE_TYPE
+*	Manually generated by Michael Haberler
+*	on Wed Jan  5 16:29:43 CET 2011
+*/
+void EMC_TOOL_START_CHANGE::update(CMS * cms)
+{
+
+    EMC_TOOL_CMD_MSG::update(cms);
 }
 
 /*
@@ -978,20 +1481,15 @@ void EMC_TOOL_SET_NUMBER::update(CMS * cms)
 */
 void EMC_SPINDLE_STAT::update(CMS * cms)
 {
+
     EMC_SPINDLE_STAT_MSG::update(cms);
     cms->update(speed);
-    cms->update(spindle_scale);
-    cms->update(css_maximum);
-    cms->update(css_factor);
-    cms->update(state);
     cms->update(direction);
     cms->update(brake);
     cms->update(increasing);
     cms->update(enabled);
     cms->update(orient_state);
     cms->update(orient_fault);
-    cms->update(spindle_override_enabled);
-    cms->update(homed);
 }
 
 /*
@@ -1001,8 +1499,10 @@ void EMC_SPINDLE_STAT::update(CMS * cms)
 */
 void EMC_JOINT_SET_MAX_POSITION_LIMIT::update(CMS * cms)
 {
+
     EMC_JOINT_CMD_MSG::update(cms);
     cms->update(limit);
+
 }
 
 /*
@@ -1012,7 +1512,9 @@ void EMC_JOINT_SET_MAX_POSITION_LIMIT::update(CMS * cms)
 */
 void EMC_COOLANT_MIST_ON::update(CMS * cms)
 {
+
     EMC_COOLANT_CMD_MSG::update(cms);
+
 }
 
 /*
@@ -1024,6 +1526,7 @@ void EMC_COOLANT_MIST_ON::update(CMS * cms)
 */
 void EMC_TRAJ_LINEAR_MOVE::update(CMS * cms)
 {
+
     EMC_TRAJ_CMD_MSG::update(cms);
     EmcPose_update(cms, &end);
     cms->update(type);
@@ -1043,6 +1546,7 @@ void EMC_TRAJ_LINEAR_MOVE::update(CMS * cms)
 */
 void EMC_TRAJ_CIRCULAR_MOVE::update(CMS * cms)
 {
+
     EMC_TRAJ_CMD_MSG::update(cms);
     EmcPose_update(cms, &end);
     cms->update(center);
@@ -1053,6 +1557,7 @@ void EMC_TRAJ_CIRCULAR_MOVE::update(CMS * cms)
     cms->update(ini_maxvel);
     cms->update(acc);
     cms->update(feed_mode);
+
 }
 
 /*
@@ -1062,9 +1567,11 @@ void EMC_TRAJ_CIRCULAR_MOVE::update(CMS * cms)
 */
 void EMC_TRAJ_SET_TERM_COND::update(CMS * cms)
 {
+
     EMC_TRAJ_CMD_MSG::update(cms);
     cms->update(cond);
     cms->update(tolerance);
+
 }
 
 void EMC_TRAJ_SET_SPINDLESYNC::update(CMS * cms)
@@ -1081,8 +1588,10 @@ void EMC_TRAJ_SET_SPINDLESYNC::update(CMS * cms)
 */
 void EMC_TASK_PLAN_RUN::update(CMS * cms)
 {
+
     EMC_TASK_CMD_MSG::update(cms);
     cms->update(line);
+
 }
 
 /*
@@ -1096,13 +1605,27 @@ void EMC_TOOL_CMD_MSG::update(CMS * cms)
 }
 
 /*
+*	NML/CMS Update function for EMC_TRAJ_STEP
+*	Automatically generated by NML CodeGen Java Applet.
+*	on Sat Oct 11 13:45:16 UTC 2003
+*/
+void EMC_TRAJ_STEP::update(CMS * cms)
+{
+
+    EMC_TRAJ_CMD_MSG::update(cms);
+
+}
+
+/*
 *	NML/CMS Update function for EMC_TASK_PLAN_RESUME
 *	Automatically generated by NML CodeGen Java Applet.
 *	on Sat Oct 11 13:45:16 UTC 2003
 */
 void EMC_TASK_PLAN_RESUME::update(CMS * cms)
 {
+
     EMC_TASK_CMD_MSG::update(cms);
+
 }
 
 /*
@@ -1126,13 +1649,27 @@ void EMC_TRAJ_STAT_MSG::update(CMS * cms)
 }
 
 /*
+*	NML/CMS Update function for EMC_IO_HALT
+*	Automatically generated by NML CodeGen Java Applet.
+*	on Sat Oct 11 13:45:16 UTC 2003
+*/
+void EMC_IO_HALT::update(CMS * cms)
+{
+
+    EMC_IO_CMD_MSG::update(cms);
+
+}
+
+/*
 *	NML/CMS Update function for EMC_OPERATOR_TEXT
 *	Automatically generated by NML CodeGen Java Applet.
 *	on Sat Oct 11 13:45:16 UTC 2003
 */
 void EMC_OPERATOR_TEXT::update(CMS * cms)
 {
-    cms->update(text, LINELEN);
+    cms->update(id);
+    cms->update(text, 256);
+
 }
 
 /*
@@ -1142,7 +1679,21 @@ void EMC_OPERATOR_TEXT::update(CMS * cms)
 */
 void EMC_COOLANT_MIST_OFF::update(CMS * cms)
 {
+
     EMC_COOLANT_CMD_MSG::update(cms);
+
+}
+
+/*
+*	NML/CMS Update function for EMC_TASK_PLAN_READ
+*	Automatically generated by NML CodeGen Java Applet.
+*	on Sat Oct 11 13:45:16 UTC 2003
+*/
+void EMC_TASK_PLAN_READ::update(CMS * cms)
+{
+
+    EMC_TASK_CMD_MSG::update(cms);
+
 }
 
 /*
@@ -1152,7 +1703,9 @@ void EMC_COOLANT_MIST_OFF::update(CMS * cms)
 */
 void EMC_TOOL_HALT::update(CMS * cms)
 {
+
     EMC_TOOL_CMD_MSG::update(cms);
+
 }
 
 /*
@@ -1162,9 +1715,10 @@ void EMC_TOOL_HALT::update(CMS * cms)
 */
 void EMC_SPINDLE_DECREASE::update(CMS * cms)
 {
+
     EMC_SPINDLE_CMD_MSG::update(cms);
-    cms->update(spindle);
     cms->update(speed);
+
 }
 
 /*
@@ -1183,6 +1737,56 @@ void CANON_TOOL_TABLE_update(CMS * cms, CANON_TOOL_TABLE * x)
 }
 
 /*
+*	NML/CMS Update function for EMC_IO_STAT_MSG
+*	Automatically generated by NML CodeGen Java Applet.
+*	on Sat Oct 11 13:45:16 UTC 2003
+*/
+void EMC_IO_STAT_MSG::update(CMS * cms)
+{
+    cms->update(heartbeat);
+
+}
+
+/*
+*	NML/CMS Update function for EMC_ABORT
+*	Automatically generated by NML CodeGen Java Applet.
+*	on Sat Oct 11 13:45:16 UTC 2003
+*/
+void EMC_ABORT::update(CMS * cms)
+{
+
+    EMC_CMD_MSG::update(cms);
+
+}
+
+/*
+*	NML/CMS Update function for EMC_EXEC_PLUGIN_CALL
+*	Manually added by Michael Haberler
+*	on Wed Jun 29 20:00:36 CEST 2011
+*/
+void EMC_EXEC_PLUGIN_CALL::update(CMS * cms)
+{
+
+    EMC_CMD_MSG::update(cms);
+    cms->update(len);
+    cms->update(call,sizeof(call));
+}
+
+/*
+*	NML/CMS Update function for EMC_IO_PLUGIN_CALL
+*	Manually added by Michael Haberler
+*	on Sun Aug  7 13:59:51 CEST 201
+*/
+void EMC_IO_PLUGIN_CALL::update(CMS * cms)
+{
+
+    EMC_CMD_MSG::update(cms);
+    cms->update(len);
+    cms->update(call,sizeof(call));
+}
+
+
+/*
 *	NML/CMS Update function for EMC_TOOL_STAT_MSG
 *	Automatically generated by NML CodeGen Java Applet.
 *	on Sat Oct 11 13:45:16 UTC 2003
@@ -1199,6 +1803,7 @@ void EMC_TOOL_STAT_MSG::update(CMS * cms)
 */
 void EMC_JOINT_STAT::update(CMS * cms)
 {
+
     EMC_JOINT_STAT_MSG::update(cms);
     cms->update(jointType);
     cms->update(units);
@@ -1232,10 +1837,11 @@ void EMC_JOINT_STAT::update(CMS * cms)
 */
 void EMC_AXIS_STAT::update(CMS * cms)
 {
+
     EMC_AXIS_STAT_MSG::update(cms);
     cms->update(minPositionLimit);
     cms->update(maxPositionLimit);
-    cms->update(velocity);
+
 }
 
 /*
@@ -1249,20 +1855,36 @@ void EMC_AXIS_STAT_MSG::update(CMS * cms)
 }
 
 /*
+*	NML/CMS Update function for EMC_INIT
+*	Automatically generated by NML CodeGen Java Applet.
+*	on Sat Oct 11 13:45:16 UTC 2003
+*/
+void EMC_INIT::update(CMS * cms)
+{
+
+    EMC_CMD_MSG::update(cms);
+
+}
+
+/*
 *	NML/CMS Update function for EMC_TRAJ_SET_SCALE
 *	Automatically generated by NML CodeGen Java Applet.
 *	on Sat Oct 11 13:45:16 UTC 2003
 */
 void EMC_TRAJ_SET_SCALE::update(CMS * cms)
 {
+
     EMC_TRAJ_CMD_MSG::update(cms);
     cms->update(scale);
+
 }
 
 void EMC_TRAJ_SET_RAPID_SCALE::update(CMS * cms)
 {
+
     EMC_TRAJ_CMD_MSG::update(cms);
     cms->update(scale);
+
 }
 
 /*
@@ -1272,9 +1894,10 @@ void EMC_TRAJ_SET_RAPID_SCALE::update(CMS * cms)
 */
 void EMC_TRAJ_SET_SPINDLE_SCALE::update(CMS * cms)
 {
+
     EMC_TRAJ_CMD_MSG::update(cms);
-    cms->update(spindle);
     cms->update(scale);
+
 }
 
 /*
@@ -1284,8 +1907,10 @@ void EMC_TRAJ_SET_SPINDLE_SCALE::update(CMS * cms)
 */
 void EMC_TRAJ_SET_FO_ENABLE::update(CMS * cms)
 {
+
     EMC_TRAJ_CMD_MSG::update(cms);
     cms->update(mode);
+
 }
 
 /*
@@ -1295,9 +1920,10 @@ void EMC_TRAJ_SET_FO_ENABLE::update(CMS * cms)
 */
 void EMC_TRAJ_SET_SO_ENABLE::update(CMS * cms)
 {
+
     EMC_TRAJ_CMD_MSG::update(cms);
-    cms->update(spindle);
     cms->update(mode);
+
 }
 
 /*
@@ -1307,8 +1933,23 @@ void EMC_TRAJ_SET_SO_ENABLE::update(CMS * cms)
 */
 void EMC_TRAJ_SET_FH_ENABLE::update(CMS * cms)
 {
+
     EMC_TRAJ_CMD_MSG::update(cms);
     cms->update(mode);
+
+}
+
+
+/*
+*	NML/CMS Update function for EMC_IO_ABORT
+*	Automatically generated by NML CodeGen Java Applet.
+*	on Sat Oct 11 13:45:16 UTC 2003
+*/
+void EMC_IO_ABORT::update(CMS * cms)
+{
+
+    EMC_IO_CMD_MSG::update(cms);
+
 }
 
 /*
@@ -1318,6 +1959,7 @@ void EMC_TRAJ_SET_FH_ENABLE::update(CMS * cms)
 */
 void EMC_TASK_STAT::update(CMS * cms)
 {
+
     EMC_TASK_STAT_MSG::update(cms);
     cms->update((int *) &mode, 1);
     cms->update((int *) &state, 1);
@@ -1327,25 +1969,21 @@ void EMC_TASK_STAT::update(CMS * cms)
     cms->update(motionLine);
     cms->update(currentLine);
     cms->update(readLine);
-    cms->update(optional_stop_state);
-    cms->update(block_delete_state);
-    cms->update(input_timeout);
-    cms->update(file, LINELEN);
-    cms->update(command, LINELEN);
-    cms->update(ini_filename, LINELEN);
+    cms->update(file, 256);
+    cms->update(command, 256);
+    cms->update(ini_filename, 256);
     EmcPose_update(cms, &g5x_offset);
-    cms->update(g5x_index);
     EmcPose_update(cms, &g92_offset);
-    cms->update(rotation_xy);
     EmcPose_update(cms, &toolOffset);
+    cms->update(g5x_index);
     cms->update(activeGCodes, ACTIVE_G_CODES);
     cms->update(activeMCodes, ACTIVE_M_CODES);
     cms->update(activeSettings, ACTIVE_SETTINGS);
     cms->update((int *) &programUnits, 1);
     cms->update(interpreter_errcode);
-    cms->update(task_paused);
-    cms->update(delayLeft);
-    cms->update(queuedMDIcommands);
+    cms->update(input_timeout);
+    cms->update(rotation_xy);
+
 }
 
 /*
@@ -1355,8 +1993,22 @@ void EMC_TASK_STAT::update(CMS * cms)
 */
 void EMC_TOOL_ABORT::update(CMS * cms)
 {
+
     EMC_TOOL_CMD_MSG::update(cms);
-    cms->update(reason);
+
+}
+
+/*
+*	NML/CMS Update function for EMC_TRAJ_SET_AXES
+*	Automatically generated by NML CodeGen Java Applet.
+*	on Sat Oct 11 13:45:16 UTC 2003
+*/
+void EMC_TRAJ_SET_AXES::update(CMS * cms)
+{
+
+    EMC_TRAJ_CMD_MSG::update(cms);
+    cms->update(axes);
+
 }
 
 /*
@@ -1366,8 +2018,10 @@ void EMC_TOOL_ABORT::update(CMS * cms)
 */
 void EMC_TOOL_LOAD_TOOL_TABLE::update(CMS * cms)
 {
+
     EMC_TOOL_CMD_MSG::update(cms);
-    cms->update(file, LINELEN);
+    cms->update(file, 256);
+
 }
 
 /*
@@ -1377,8 +2031,10 @@ void EMC_TOOL_LOAD_TOOL_TABLE::update(CMS * cms)
 */
 void EMC_TASK_SET_STATE::update(CMS * cms)
 {
+
     EMC_TASK_CMD_MSG::update(cms);
     cms->update((int *) &state, 1);
+
 }
 
 /*
@@ -1388,8 +2044,9 @@ void EMC_TASK_SET_STATE::update(CMS * cms)
 */
 void EMC_SPINDLE_BRAKE_RELEASE::update(CMS * cms)
 {
+
     EMC_SPINDLE_CMD_MSG::update(cms);
-    cms->update(spindle);
+
 }
 
 /*
@@ -1400,6 +2057,7 @@ void EMC_SPINDLE_BRAKE_RELEASE::update(CMS * cms)
 void EMC_JOINT_STAT_MSG::update(CMS * cms)
 {
     cms->update(joint);
+
 }
 
 /*
@@ -1409,9 +2067,25 @@ void EMC_JOINT_STAT_MSG::update(CMS * cms)
 */
 void EMC_JOINT_LOAD_COMP::update(CMS * cms)
 {
+
     EMC_JOINT_CMD_MSG::update(cms);
-    cms->update(file, LINELEN);
+    cms->update(file, 256);
     cms->update(type);
+
+}
+
+/*
+*	NML/CMS Update function for EMC_TRAJ_SET_UNITS
+*	Automatically generated by NML CodeGen Java Applet.
+*	on Sat Oct 11 13:45:16 UTC 2003
+*/
+void EMC_TRAJ_SET_UNITS::update(CMS * cms)
+{
+
+    EMC_TRAJ_CMD_MSG::update(cms);
+    cms->update(linearUnits);
+    cms->update(angularUnits);
+
 }
 
 /*
@@ -1431,8 +2105,10 @@ void EMC_STAT_MSG::update(CMS * cms)
 */
 void EMC_TASK_SET_MODE::update(CMS * cms)
 {
+
     EMC_TASK_CMD_MSG::update(cms);
     cms->update((int *) &mode, 1);
+
 }
 
 /*
@@ -1440,10 +2116,24 @@ void EMC_TASK_SET_MODE::update(CMS * cms)
 */
 void EMC_JOG_INCR::update(CMS * cms)
 {
+
     EMC_JOG_CMD_MSG::update(cms);
     cms->update(incr);
     cms->update(vel);
     cms->update(jjogmode);
+
+}
+
+/*
+*	NML/CMS Update function for EMC_JOINT_ACTIVATE
+*	Automatically generated by NML CodeGen Java Applet.
+*	on Sat Oct 11 13:45:16 UTC 2003
+*/
+void EMC_JOINT_ACTIVATE::update(CMS * cms)
+{
+
+    EMC_JOINT_CMD_MSG::update(cms);
+
 }
 
 /*
@@ -1453,8 +2143,8 @@ void EMC_JOG_INCR::update(CMS * cms)
 */
 void EMC_SPINDLE_ON::update(CMS * cms)
 {
+
     EMC_SPINDLE_CMD_MSG::update(cms);
-    cms->update(spindle);
     cms->update(speed);
     cms->update(factor);
     cms->update(xoffset);
@@ -1468,11 +2158,12 @@ void EMC_SPINDLE_ON::update(CMS * cms)
 */
 void EMC_SPINDLE_SPEED::update(CMS * cms)
 {
+
     EMC_SPINDLE_CMD_MSG::update(cms);
-    cms->update(spindle);
     cms->update(speed);
     cms->update(factor);
     cms->update(xoffset);
+
 }
 
 /*
@@ -1482,8 +2173,8 @@ void EMC_SPINDLE_SPEED::update(CMS * cms)
 */
 void EMC_SPINDLE_ORIENT::update(CMS * cms)
 {
+
     EMC_SPINDLE_CMD_MSG::update(cms);
-    cms->update(spindle);
     cms->update(orientation);
     cms->update(mode);
 }
@@ -1495,8 +2186,8 @@ void EMC_SPINDLE_ORIENT::update(CMS * cms)
 */
 void EMC_SPINDLE_WAIT_ORIENT_COMPLETE::update(CMS * cms)
 {
+
     EMC_SPINDLE_CMD_MSG::update(cms);
-    cms->update(spindle);
     cms->update(timeout);
 }
 
@@ -1507,7 +2198,9 @@ void EMC_SPINDLE_WAIT_ORIENT_COMPLETE::update(CMS * cms)
 */
 void EMC_TASK_PLAN_END::update(CMS * cms)
 {
+
     EMC_TASK_CMD_MSG::update(cms);
+
 }
 
 /*
@@ -1517,8 +2210,22 @@ void EMC_TASK_PLAN_END::update(CMS * cms)
 */
 void EMC_TRAJ_SET_OFFSET::update(CMS * cms)
 {
+
     EMC_TRAJ_CMD_MSG::update(cms);
     EmcPose_update(cms, &offset);
+
+}
+
+/*
+*	NML/CMS Update function for EMC_JOINT_ABORT
+*	Automatically generated by NML CodeGen Java Applet.
+*	on Sat Oct 11 13:45:16 UTC 2003
+*/
+void EMC_JOINT_ABORT::update(CMS * cms)
+{
+
+    EMC_JOINT_CMD_MSG::update(cms);
+
 }
 
 /*
@@ -1538,7 +2245,22 @@ void EMC_TRAJ_CMD_MSG::update(CMS * cms)
 */
 void EMC_OPERATOR_ERROR::update(CMS * cms)
 {
-    cms->update(error, LINELEN);
+    cms->update(id);
+    cms->update(error, 256);
+
+}
+
+/*
+*	NML/CMS Update function for EMC_JOINT_SET_MAX_VELOCITY
+*	Automatically generated by NML CodeGen Java Applet.
+*	on Sat Oct 11 13:45:17 UTC 2003
+*/
+void EMC_JOINT_SET_MAX_VELOCITY::update(CMS * cms)
+{
+
+    EMC_JOINT_CMD_MSG::update(cms);
+    cms->update(vel);
+
 }
 
 /*
@@ -1549,6 +2271,19 @@ void EMC_OPERATOR_ERROR::update(CMS * cms)
 void EMC_SET_DEBUG::update(CMS * cms)
 {
     cms->update(debug);
+
+}
+
+/*
+*	NML/CMS Update function for EMC_HALT
+*	Automatically generated by NML CodeGen Java Applet.
+*	on Sat Oct 11 13:45:17 UTC 2003
+*/
+void EMC_HALT::update(CMS * cms)
+{
+
+    EMC_CMD_MSG::update(cms);
+
 }
 
 /*
@@ -1558,7 +2293,21 @@ void EMC_SET_DEBUG::update(CMS * cms)
 */
 void EMC_TASK_PLAN_STEP::update(CMS * cms)
 {
+
     EMC_TASK_CMD_MSG::update(cms);
+
+}
+
+/*
+*	NML/CMS Update function for EMC_JOINT_DISABLE
+*	Automatically generated by NML CodeGen Java Applet.
+*	on Sat Oct 11 13:45:17 UTC 2003
+*/
+void EMC_JOINT_DISABLE::update(CMS * cms)
+{
+
+    EMC_JOINT_CMD_MSG::update(cms);
+
 }
 
 /*
@@ -1567,8 +2316,10 @@ void EMC_TASK_PLAN_STEP::update(CMS * cms)
 */
 void EMC_JOINT_SET_BACKLASH::update(CMS * cms)
 {
+
     EMC_JOINT_CMD_MSG::update(cms);
     cms->update(backlash);
+
 }
 
 /*
@@ -1578,21 +2329,27 @@ void EMC_JOINT_SET_BACKLASH::update(CMS * cms)
 */
 void EMC_TRAJ_SET_G5X::update(CMS * cms)
 {
+
     EMC_TRAJ_CMD_MSG::update(cms);
     cms->update(g5x_index);
     EmcPose_update(cms, &origin);
+
 }
 
 void EMC_TRAJ_SET_G92::update(CMS * cms)
 {
+
     EMC_TRAJ_CMD_MSG::update(cms);
     EmcPose_update(cms, &origin);
+
 }
 
 void EMC_TRAJ_SET_ROTATION::update(CMS * cms)
 {
+
     EMC_TRAJ_CMD_MSG::update(cms);
     cms->update(rotation);
+
 }
 
 /*
@@ -1602,8 +2359,9 @@ void EMC_TRAJ_SET_ROTATION::update(CMS * cms)
 */
 void EMC_SPINDLE_BRAKE_ENGAGE::update(CMS * cms)
 {
+
     EMC_SPINDLE_CMD_MSG::update(cms);
-    cms->update(spindle);
+
 }
 
 /*
@@ -1613,12 +2371,11 @@ void EMC_SPINDLE_BRAKE_ENGAGE::update(CMS * cms)
 */
 void EMC_TRAJ_STAT::update(CMS * cms)
 {
+
     EMC_TRAJ_STAT_MSG::update(cms);
     cms->update(linearUnits);
     cms->update(angularUnits);
     cms->update(cycleTime);
-    cms->update(joints);
-    cms->update(spindles);
     cms->update(axis_mask);
     cms->update((int *) &mode, 1);
     cms->update(enabled);
@@ -1629,7 +2386,6 @@ void EMC_TRAJ_STAT::update(CMS * cms)
     cms->update(id);
     cms->update(paused);
     cms->update(scale);
-    cms->update(rapid_scale);
     EmcPose_update(cms, &position);
     EmcPose_update(cms, &actualPosition);
     cms->update(velocity);
@@ -1642,12 +2398,7 @@ void EMC_TRAJ_STAT::update(CMS * cms)
     cms->update(probeval);
     cms->update(kinematics_type);
     cms->update(motion_type);
-    cms->update(distance_to_go);
-    EmcPose_update(cms, &dtg);
-    cms->update(current_vel);
-    cms->update(feed_override_enabled);
-    cms->update(adaptive_feed_enabled);
-    cms->update(feed_hold_enabled);
+
 }
 
 /*
@@ -1657,12 +2408,77 @@ void EMC_TRAJ_STAT::update(CMS * cms)
 */
 void EMC_JOINT_HOME::update(CMS * cms)
 {
+
     EMC_JOINT_CMD_MSG::update(cms);
+
 }
 
 void EMC_JOINT_UNHOME::update(CMS * cms)
 {
+
     EMC_JOINT_CMD_MSG::update(cms);
+
+}
+
+/*
+*	NML/CMS Update function for EMC_JOINT_INIT
+*	Automatically generated by NML CodeGen Java Applet.
+*	on Sat Oct 11 13:45:17 UTC 2003
+*/
+void EMC_JOINT_INIT::update(CMS * cms)
+{
+
+    EMC_JOINT_CMD_MSG::update(cms);
+
+}
+
+/*
+*	NML/CMS Update function for EMC_JOINT_ENABLE
+*	Automatically generated by NML CodeGen Java Applet.
+*	on Sat Oct 11 13:45:17 UTC 2003
+*/
+void EMC_JOINT_ENABLE::update(CMS * cms)
+{
+
+    EMC_JOINT_CMD_MSG::update(cms);
+
+}
+
+/*
+*	NML/CMS Update function for EMC_TRAJ_SET_MAX_ACCELERATION
+*	Automatically generated by NML CodeGen Java Applet.
+*	on Sat Oct 11 13:45:17 UTC 2003
+*/
+void EMC_TRAJ_SET_MAX_ACCELERATION::update(CMS * cms)
+{
+
+    EMC_TRAJ_CMD_MSG::update(cms);
+    cms->update(acceleration);
+
+}
+
+/*
+*	NML/CMS Update function for EMC_LUBE_STAT_MSG
+*	Automatically generated by NML CodeGen Java Applet.
+*	on Sat Oct 11 13:45:17 UTC 2003
+*/
+void EMC_LUBE_STAT_MSG::update(CMS * cms)
+{
+
+}
+
+/*
+*	NML/CMS Update function for EMC_LUBE_STAT
+*	Automatically generated by NML CodeGen Java Applet.
+*	on Sat Oct 11 13:45:17 UTC 2003
+*/
+void EMC_LUBE_STAT::update(CMS * cms)
+{
+
+    EMC_LUBE_STAT_MSG::update(cms);
+    cms->update(on);
+    cms->update(level);
+
 }
 
 /*
@@ -1672,11 +2488,23 @@ void EMC_JOINT_UNHOME::update(CMS * cms)
 */
 void EMC_SPINDLE_INCREASE::update(CMS * cms)
 {
+
     EMC_SPINDLE_CMD_MSG::update(cms);
-    cms->update(spindle);
     cms->update(speed);
+
 }
 
+/*
+*	NML/CMS Update function for EMC_TASK_INIT
+*	Automatically generated by NML CodeGen Java Applet.
+*	on Sat Oct 11 13:45:17 UTC 2003
+*/
+void EMC_TASK_INIT::update(CMS * cms)
+{
+
+    EMC_TASK_CMD_MSG::update(cms);
+
+}
 
 /*
 *	NML/CMS Update function for EMC_AUX_CMD_MSG
@@ -1695,8 +2523,22 @@ void EMC_AUX_CMD_MSG::update(CMS * cms)
 */
 void EMC_JOINT_SET_MIN_FERROR::update(CMS * cms)
 {
+
     EMC_JOINT_CMD_MSG::update(cms);
     cms->update(ferror);
+
+}
+
+/*
+*	NML/CMS Update function for EMC_AUX_ESTOP_ON
+*	Automatically generated by NML CodeGen Java Applet.
+*	on Sat Oct 11 13:45:17 UTC 2003
+*/
+void EMC_AUX_ESTOP_ON::update(CMS * cms)
+{
+
+    EMC_AUX_CMD_MSG::update(cms);
+
 }
 
 /*
@@ -1716,7 +2558,9 @@ void EMC_NULL::update(CMS * cms)
 */
 void EMC_COOLANT_FLOOD_OFF::update(CMS * cms)
 {
+
     EMC_COOLANT_CMD_MSG::update(cms);
+
 }
 
 /*
@@ -1742,29 +2586,15 @@ void EmcPose_update(CMS * cms, EmcPose * x)
 */
 void EMC_MOTION_STAT::update(CMS * cms)
 {
+
+    EMC_MOTION_STAT_MSG::update(cms);
     traj.update(cms);
     for (int i_joint = 0; i_joint < EMCMOT_MAX_JOINTS; i_joint++)
-	    joint[i_joint].update(cms);
-    for (int i_axis = 0; i_axis < EMCMOT_MAX_AXIS; i_axis++)
-        axis[i_axis].update(cms);
-    for (int i_spindle = 0; i_spindle < EMCMOT_MAX_SPINDLES; i_spindle++)
-        spindle[i_spindle].update(cms);
-    for (int i_synch_di = 0; i_synch_di < EMCMOT_MAX_AIO; i_synch_di++)
-        cms->update(synch_di[i_synch_di]);
-    for (int i_synch_do = 0; i_synch_do < EMCMOT_MAX_AIO; i_synch_do++)
-        cms->update(synch_do[i_synch_do]);
-    for (int i_analog_input = 0; i_analog_input < EMCMOT_MAX_AIO; i_analog_input++)
-        cms->update(analog_input[i_analog_input]);
-    for (int i_analog_output = 0; i_analog_output < EMCMOT_MAX_AIO; i_analog_output++)
-        cms->update(analog_output[i_analog_output]);
-    for (int i_misc_error = 0; i_misc_error < EMCMOT_MAX_MISC_ERROR; i_misc_error++)
-        cms->update(misc_error[i_misc_error]);
+	joint[i_joint].update(cms);
     cms->update(debug);
-    cms->update(on_soft_limit);
-    cms->update(external_offsets_applied);
-    EmcPose_update(cms, &eoffset_pose);
-    cms->update(numExtraJoints);
-    cms->update(jogging_active);
+
+    // spindle.update(cms); //FIXME - is this needed ? Let's see. andypugh 13/6/16
+
 }
 
 /*
@@ -1774,7 +2604,9 @@ void EMC_MOTION_STAT::update(CMS * cms)
 */
 void EMC_TRAJ_PAUSE::update(CMS * cms)
 {
+
     EMC_TRAJ_CMD_MSG::update(cms);
+
 }
 
 /*
@@ -1794,8 +2626,10 @@ void EMC_AUX_STAT_MSG::update(CMS * cms)
 */
 void EMC_TRAJ_SET_MAX_VELOCITY::update(CMS * cms)
 {
+
     EMC_TRAJ_CMD_MSG::update(cms);
     cms->update(velocity);
+
 }
 
 /*
@@ -1805,11 +2639,10 @@ void EMC_TRAJ_SET_MAX_VELOCITY::update(CMS * cms)
 */
 void EMC_TASK_PLAN_OPEN::update(CMS * cms)
 {
+
     EMC_TASK_CMD_MSG::update(cms);
-    cms->update(file, LINELEN);
-    cms->update(remote_filesize);
-    cms->update(remote_buffersize);
-    cms->update(remote_buffer, sizeof(remote_buffer));
+    cms->update(file, 256);
+
 }
 
 /*
@@ -1818,6 +2651,7 @@ void EMC_TASK_PLAN_OPEN::update(CMS * cms)
 */
 void EMC_JOINT_SET_HOMING_PARAMS::update(CMS * cms)
 {
+
     EMC_JOINT_CMD_MSG::update(cms);
     cms->update(home);
     cms->update(offset);
@@ -1825,13 +2659,10 @@ void EMC_JOINT_SET_HOMING_PARAMS::update(CMS * cms)
     cms->update(search_vel);
     cms->update(latch_vel);
     cms->update(use_index);
-    cms->update(encoder_does_not_reset);
     cms->update(ignore_limits);
-    cms->update(is_shared);
-    cms->update(home_sequence);
     cms->update(volatile_home);
     cms->update(locking_indexer);
-    cms->update(absolute_encoder);
+
 }
 
 /*
@@ -1841,8 +2672,10 @@ void EMC_JOINT_SET_HOMING_PARAMS::update(CMS * cms)
 */
 void EMC_TRAJ_SET_MODE::update(CMS * cms)
 {
+
     EMC_TRAJ_CMD_MSG::update(cms);
     cms->update((int *) &mode, 1);
+
 }
 
 /*
@@ -1852,8 +2685,10 @@ void EMC_TRAJ_SET_MODE::update(CMS * cms)
 */
 void EMC_TASK_PLAN_EXECUTE::update(CMS * cms)
 {
+
     EMC_TASK_CMD_MSG::update(cms);
-    cms->update(command, LINELEN);
+    cms->update(command, 256);
+
 }
 
 /*
@@ -1863,7 +2698,9 @@ void EMC_TASK_PLAN_EXECUTE::update(CMS * cms)
 */
 void EMC_COOLANT_FLOOD_ON::update(CMS * cms)
 {
+
     EMC_COOLANT_CMD_MSG::update(cms);
+
 }
 
 /*
@@ -1873,9 +2710,11 @@ void EMC_COOLANT_FLOOD_ON::update(CMS * cms)
 */
 void EMC_COOLANT_STAT::update(CMS * cms)
 {
+
     EMC_COOLANT_STAT_MSG::update(cms);
     cms->update(mist);
     cms->update(flood);
+
 }
 
 /*
@@ -1885,8 +2724,26 @@ void EMC_COOLANT_STAT::update(CMS * cms)
 */
 void EMC_TRAJ_SET_TELEOP_ENABLE::update(CMS * cms)
 {
+
     EMC_TRAJ_CMD_MSG::update(cms);
     cms->update(enable);
+
+}
+
+/*
+*	NML/CMS Update function for CANON_POSITION
+*	Automatically generated by NML CodeGen Java Applet.
+*	on Sat Oct 11 13:45:17 UTC 2003
+*/
+void CANON_POSITION_update(CMS * cms, CANON_POSITION * x)
+{
+    cms->update(x->x);
+    cms->update(x->y);
+    cms->update(x->z);
+    cms->update(x->a);
+    cms->update(x->b);
+    cms->update(x->c);
+
 }
 
 /*
@@ -1896,7 +2753,9 @@ void EMC_TRAJ_SET_TELEOP_ENABLE::update(CMS * cms)
 */
 void EMC_JOINT_HALT::update(CMS * cms)
 {
+
     EMC_JOINT_CMD_MSG::update(cms);
+
 }
 
 /*
@@ -1906,7 +2765,9 @@ void EMC_JOINT_HALT::update(CMS * cms)
 */
 void EMC_TASK_PLAN_PAUSE::update(CMS * cms)
 {
+
     EMC_TASK_CMD_MSG::update(cms);
+
 }
 
 /*
@@ -1916,8 +2777,11 @@ void EMC_TASK_PLAN_PAUSE::update(CMS * cms)
 */
 void EMC_TASK_PLAN_SET_OPTIONAL_STOP::update(CMS * cms)
 {
+
     EMC_TASK_CMD_MSG::update(cms);
+
     cms->update(state);
+    
 }
 
 /*
@@ -1927,8 +2791,11 @@ void EMC_TASK_PLAN_SET_OPTIONAL_STOP::update(CMS * cms)
 */
 void EMC_TASK_PLAN_SET_BLOCK_DELETE::update(CMS * cms)
 {
+
     EMC_TASK_CMD_MSG::update(cms);
+
     cms->update(state);
+    
 }
 
 /*
@@ -1938,7 +2805,33 @@ void EMC_TASK_PLAN_SET_BLOCK_DELETE::update(CMS * cms)
 */
 void EMC_TASK_PLAN_OPTIONAL_STOP::update(CMS * cms)
 {
+
     EMC_TASK_CMD_MSG::update(cms);
+
+}
+
+
+/*
+*	NML/CMS Update function for EMC_MOTION_STAT_MSG
+*	Automatically generated by NML CodeGen Java Applet.
+*	on Sat Oct 11 13:45:17 UTC 2003
+*/
+void EMC_MOTION_STAT_MSG::update(CMS * cms)
+{
+    cms->update(heartbeat);
+
+}
+
+/*
+*	NML/CMS Update function for EMC_TASK_HALT
+*	Automatically generated by NML CodeGen Java Applet.
+*	on Sat Oct 11 13:45:17 UTC 2003
+*/
+void EMC_TASK_HALT::update(CMS * cms)
+{
+
+    EMC_TASK_CMD_MSG::update(cms);
+
 }
 
 /*
@@ -1948,6 +2841,7 @@ void EMC_TASK_PLAN_OPTIONAL_STOP::update(CMS * cms)
 */
 void EMC_TRAJ_PROBE::update(CMS * cms)
 {
+
     EMC_TRAJ_CMD_MSG::update(cms);
     EmcPose_update(cms, &pos);
     cms->update(type);
@@ -1964,11 +2858,13 @@ void EMC_TRAJ_PROBE::update(CMS * cms)
 */
 void EMC_AUX_INPUT_WAIT::update(CMS * cms)
 {
+
     EMC_AUX_CMD_MSG::update(cms);
     cms->update(index);
     cms->update(input_type);
     cms->update(wait_type);
     cms->update(timeout);
+
 }
 
 
@@ -1979,12 +2875,62 @@ void EMC_AUX_INPUT_WAIT::update(CMS * cms)
 */
 void EMC_TRAJ_RIGID_TAP::update(CMS * cms)
 {
+
     EMC_TRAJ_CMD_MSG::update(cms);
     EmcPose_update(cms, &pos);
     cms->update(vel);
     cms->update(ini_maxvel);
     cms->update(acc);
-    cms->update(scale);
+
+}
+
+
+/*
+*	NML/CMS Update function for EMC_LUBE_OFF
+*	Automatically generated by NML CodeGen Java Applet.
+*	on Sat Oct 11 13:45:17 UTC 2003
+*/
+void EMC_LUBE_OFF::update(CMS * cms)
+{
+
+    EMC_LUBE_CMD_MSG::update(cms);
+
+}
+
+/*
+*	NML/CMS Update function for EMC_LUBE_ON
+*	Automatically generated by NML CodeGen Java Applet.
+*	on Sat Oct 11 13:45:17 UTC 2003
+*/
+void EMC_LUBE_ON::update(CMS * cms)
+{
+
+    EMC_LUBE_CMD_MSG::update(cms);
+
+}
+
+/*
+*	NML/CMS Update function for EMC_TRAJ_INIT
+*	Automatically generated by NML CodeGen Java Applet.
+*	on Sat Oct 11 13:45:17 UTC 2003
+*/
+void EMC_TRAJ_INIT::update(CMS * cms)
+{
+
+    EMC_TRAJ_CMD_MSG::update(cms);
+
+}
+
+/*
+*	NML/CMS Update function for EMC_TRAJ_DISABLE
+*	Automatically generated by NML CodeGen Java Applet.
+*	on Sat Oct 11 13:45:17 UTC 2003
+*/
+void EMC_TRAJ_DISABLE::update(CMS * cms)
+{
+
+    EMC_TRAJ_CMD_MSG::update(cms);
+
 }
 
 /*
@@ -1994,7 +2940,9 @@ void EMC_TRAJ_RIGID_TAP::update(CMS * cms)
 */
 void EMC_TOOL_UNLOAD::update(CMS * cms)
 {
+
     EMC_TOOL_CMD_MSG::update(cms);
+
 }
 
 /*
@@ -2004,11 +2952,13 @@ void EMC_TOOL_UNLOAD::update(CMS * cms)
 */
 void EMC_MOTION_SET_DOUT::update(CMS * cms)
 {
+
     EMC_MOTION_CMD_MSG::update(cms);
     cms->update(index);
     cms->update(start);
     cms->update(end);
     cms->update(now);
+
 }
 
 
@@ -2019,8 +2969,10 @@ void EMC_MOTION_SET_DOUT::update(CMS * cms)
 */
 void EMC_MOTION_ADAPTIVE::update(CMS * cms)
 {
+
     EMC_MOTION_CMD_MSG::update(cms);
     cms->update(status);
+
 }
 
 
@@ -2031,5 +2983,19 @@ void EMC_MOTION_ADAPTIVE::update(CMS * cms)
 */
 void EMC_MOTION_CMD_MSG::update(CMS * cms)
 {
+
+}
+
+
+/*
+*	NML/CMS Update function for EMC_IO_SET_CYCLE_TIME
+*	Automatically generated by NML CodeGen Java Applet.
+*	on Sat Oct 11 13:45:17 UTC 2003
+*/
+void EMC_IO_SET_CYCLE_TIME::update(CMS * cms)
+{
+
+    EMC_IO_CMD_MSG::update(cms);
+    cms->update(cycleTime);
 
 }

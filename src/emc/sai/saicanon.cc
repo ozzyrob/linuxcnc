@@ -291,9 +291,9 @@ extern void SET_NAIVECAM_TOLERANCE(double tolerance)
 void SELECT_PLANE(CANON_PLANE in_plane)
 {
   PRINT("SELECT_PLANE(CANON_PLANE_%s)\n",
-         ((in_plane == CANON_PLANE::XY) ? "XY" :
-          (in_plane == CANON_PLANE::YZ) ? "YZ" :
-          (in_plane == CANON_PLANE::XZ) ? "XZ" : "UNKNOWN"));
+         ((in_plane == CANON_PLANE_XY) ? "XY" :
+          (in_plane == CANON_PLANE_YZ) ? "YZ" :
+          (in_plane == CANON_PLANE_XZ) ? "XZ" : "UNKNOWN"));
   _sai._active_plane = in_plane;
 }
 
@@ -317,22 +317,13 @@ void STOP_SPEED_FEED_SYNCH()
 
 /* Machining Functions */
 
-/* Machining Functions G_5_2 */
-void NURBS_G5_FEED(int lineno, std::vector<NURBS_CONTROL_POINT> nurbs_control_points, unsigned int nurbs_order, CANON_PLANE plane) {
+void NURBS_FEED(int lineno,
+std::vector<CONTROL_POINT> nurbs_control_points, unsigned int k)
+{
   ECHO_WITH_ARGS("%lu, ...", (unsigned long)nurbs_control_points.size());
 
-  _sai._program_position_x = nurbs_control_points[nurbs_control_points.size()].NURBS_X;
-  _sai._program_position_y = nurbs_control_points[nurbs_control_points.size()].NURBS_Y;
-}
-
-/* Machining Functions G_6_2 */
-void NURBS_G6_FEED(int lineno, std::vector<NURBS_G6_CONTROL_POINT> nurbs_control_points, unsigned int k, double feedrate, int l, CANON_PLANE plane) {
-  //fprintf(_outfile, "%5d ", _line_number++);
-  print_nc_line_number();
-  fprintf(_outfile, "saicanon NURBS_G6_FEED_(%lu, ...)\n", (unsigned long)nurbs_control_points.size());
-
-  _sai._program_position_x = nurbs_control_points[nurbs_control_points.size()].NURBS_X;
-  _sai._program_position_y = nurbs_control_points[nurbs_control_points.size()].NURBS_Y;
+  _sai._program_position_x = nurbs_control_points[nurbs_control_points.size()].X;
+  _sai._program_position_y = nurbs_control_points[nurbs_control_points.size()].Y;
 }
 
 void ARC_FEED(int line_number,
@@ -354,19 +345,19 @@ void ARC_FEED(int line_number,
          , b /*BB*/
          , c /*CC*/
          );
-  if (_sai._active_plane == CANON_PLANE::XY)
+  if (_sai._active_plane == CANON_PLANE_XY)
     {
       _sai._program_position_x = first_end;
       _sai._program_position_y = second_end;
       _sai._program_position_z = axis_end_point;
     }
-  else if (_sai._active_plane == CANON_PLANE::YZ)
+  else if (_sai._active_plane == CANON_PLANE_YZ)
     {
       _sai._program_position_x = axis_end_point;
       _sai._program_position_y = first_end;
       _sai._program_position_z = second_end;
     }
-  else /* if (_active_plane == CANON_PLANE::XZ) */
+  else /* if (_active_plane == CANON_PLANE_XZ) */
     {
       _sai._program_position_x = second_end;
       _sai._program_position_y = axis_end_point;
@@ -552,15 +543,15 @@ void USE_TOOL_LENGTH_OFFSET(EmcPose offset)
          offset.tran.x, offset.tran.y, offset.tran.z, offset.a, offset.b, offset.c, offset.u, offset.v, offset.w);
 }
 
-void CHANGE_TOOL()
+void CHANGE_TOOL(int slot)
 {
-  PRINT("CHANGE_TOOL()\n");
-  _sai._active_slot = _sai._selected_tool;
+  PRINT("CHANGE_TOOL(%d)\n", slot);
+  _sai._active_slot = slot;
 #ifdef TOOL_NML //{
-  _sai._tools[0] = _sai._tools[_sai._active_slot];
+  _sai._tools[0] = _sai._tools[slot];
 #else //}{
     CANON_TOOL_TABLE tdata;
-    if (tooldata_get(&tdata,_sai._selected_tool) != IDX_OK) {
+    if (tooldata_get(&tdata,slot) != IDX_OK) {
         UNEXPECTED_MSG;
     }
     _sai._tools[0] = tdata;
@@ -571,10 +562,7 @@ void CHANGE_TOOL()
 }
 
 void SELECT_TOOL(int tool)//TODO: fix slot number
-{
-  PRINT("SELECT_TOOL(%d)\n", tool);
-  _sai._selected_tool = tool;
-}
+{PRINT("SELECT_TOOL(%d)\n", tool);}
 
 void CHANGE_TOOL_NUMBER(int tool)
 {
@@ -1080,6 +1068,11 @@ void ON_RESET(void)
     PRINT("ON_RESET()\n");
 }
 
+void START_CHANGE(void) {
+    PRINT("START_CHANGE()\n");
+}
+
+
 int GET_EXTERNAL_TC_FAULT()
 {
     return _sai._toolchanger_fault;
@@ -1130,16 +1123,23 @@ void CANON_ERROR(const char *fmt, ...)
 	}
     }
 }
+void PLUGIN_CALL(int len, const char *call)
+{
+    printf("PLUGIN_CALL(%d)\n",len);
+}
 
+void IO_PLUGIN_CALL(int len, const char *call)
+{
+    printf("IO_PLUGIN_CALL(%d)\n",len);
+}
 void reset_internals()
 {
   _sai = StandaloneInterpInternals();
 }
 
 StandaloneInterpInternals::StandaloneInterpInternals() :
-  _active_plane(CANON_PLANE::XY),
+  _active_plane(CANON_PLANE_XY),
   _active_slot(1),
-  _selected_tool(0),
   _feed_mode(0),
   _feed_rate(0.0),
   _flood(0),

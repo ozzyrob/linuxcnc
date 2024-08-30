@@ -2742,7 +2742,7 @@ class gmoccapy(object):
         self.last_key_event = None, 0
 
     def on_hal_status_mode_mdi(self, widget):
-        LOG.debug("MDI Mode, tool_change = {0}".format(self.tool_change))
+        LOG.debug("MDI Mode {0}".format(self.tool_change))
 
         # if the edit offsets button is active, we do not want to change
         # pages, as the user may want to edit several axis values
@@ -3193,13 +3193,6 @@ class gmoccapy(object):
         # tooledit page is active, so keys must go through
         if self.widgets.ntb_preview.get_current_page() == 2:
             return
-            
-        if (self.widgets.ntb_preview.get_current_page() == 4 and
-            keyname in ['0', '1', '2', '3', '4', '5', '6', '7', '8', '9',
-            'comma', 'period', 'BackSpace', 'Return']):
-            #user Tab, pass numbers through
-            return False
-            
 
         # take care of different key handling for lathe operation
         if self.lathe_mode:
@@ -5554,7 +5547,7 @@ class gmoccapy(object):
         else:
             self._on_btn_jog_released(None, button_name)
 
-    def _reset_override(self, pin, type):
+    def _reset_overide(self, pin, type):
         if pin.get():
             if type == "rapid":
                 self.command.rapidrate(1.0)
@@ -5763,15 +5756,15 @@ class gmoccapy(object):
 
         # make a pin to reset feed override to 100 %
         pin = self.halcomp.newpin("feed.reset-feed-override", hal.HAL_BIT, hal.HAL_IN)
-        hal_glib.GPin(pin).connect("value_changed", self._reset_override, "feed")
+        hal_glib.GPin(pin).connect("value_changed", self._reset_overide, "feed")
 
         # make a pin to reset rapid override to 100 %
         pin = self.halcomp.newpin("rapid.reset-rapid-override", hal.HAL_BIT, hal.HAL_IN)
-        hal_glib.GPin(pin).connect("value_changed", self._reset_override, "rapid")
+        hal_glib.GPin(pin).connect("value_changed", self._reset_overide, "rapid")
 
         # make a pin to reset spindle override to 100 %
         pin = self.halcomp.newpin("spindle.reset-spindle-override", hal.HAL_BIT, hal.HAL_IN)
-        hal_glib.GPin(pin).connect("value_changed", self._reset_override, "spindle")
+        hal_glib.GPin(pin).connect("value_changed", self._reset_overide, "spindle")
 
         # make an error pin to indicate a error to hardware
         self.halcomp.newpin("error", hal.HAL_BIT, hal.HAL_OUT)

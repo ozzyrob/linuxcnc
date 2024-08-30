@@ -277,18 +277,13 @@ class Keylookup:
         except NameError as e:
             if is_pressed:
                 LOG.debug('Exception in KEYBINDING: {}'.format(e))
-                if LOG.getEffectiveLevel() == LOG.VERBOSE:
-                    formatted_lines = traceback.format_exc().splitlines()
-                    for i in range(5, len(formatted_lines)):
-                        print(formatted_lines[i])
         except Exception as e:
             if is_pressed:
                 formatted_lines = traceback.format_exc().splitlines()
                 # LOG.debug('Exception in KEYBINDING:', exc_info=e)
                 print("""Key Binding Error for key '%s' calling function: %s in handler file:""" % (
                 key, self.convert(event)))
-                if LOG.getEffectiveLevel() == LOG.VERBOSE:
-                    for i in range(5, len(formatted_lines)):
-                        print(formatted_lines[i])
+                for i in range(5, len(formatted_lines)):
+                    print(formatted_lines[i])
         event.accept()
         return True

@@ -440,6 +440,7 @@ int rtapi_app_main(void)
     int idcode, id, ver;
     bus_data_t *bus;
     slot_data_t *slot;
+    char buf[HAL_NAME_LEN + 1];
 
     /* connect to the HAL */
     comp_id = hal_init("hal_ppmc");
@@ -731,8 +732,9 @@ int rtapi_app_main(void)
 	    continue;
 	}
 	/* export functions */
-	rv1 = hal_export_functf(read_all, &(bus_array[busnum]),
-	    1, 0, comp_id, "ppmc.%d.read", busnum);
+	rtapi_snprintf(buf, sizeof(buf), "ppmc.%d.read", busnum);
+	rv1 = hal_export_funct(buf, read_all, &(bus_array[busnum]),
+	    1, 0, comp_id);
 	if (rv1 != 0) {
 	    rtapi_print_msg(RTAPI_MSG_ERR,
 		"PPMC: ERROR: read funct export failed\n");
@@ -740,8 +742,9 @@ int rtapi_app_main(void)
 	    /* skip to next bus */
 	    continue;
 	}
-	rv1 = hal_export_functf(write_all, &(bus_array[busnum]),
-	    1, 0, comp_id, "ppmc.%d.write", busnum);
+	rtapi_snprintf(buf, sizeof(buf), "ppmc.%d.write", busnum);
+	rv1 = hal_export_funct(buf, write_all, &(bus_array[busnum]),
+	    1, 0, comp_id);
 	if (rv1 != 0) {
 	    rtapi_print_msg(RTAPI_MSG_ERR,
 		"PPMC: ERROR: write funct export failed\n");

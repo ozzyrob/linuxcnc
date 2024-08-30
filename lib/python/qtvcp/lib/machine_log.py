@@ -68,11 +68,7 @@ class MachineLogger():
         try:
             timestamp = time.strftime("%a%d %H:%M: ")
             fp = open(self.mlp, 'a')
-            for num,i in enumerate(message.split('\\n')):
-                if num == 0:
-                    fp.write(timestamp + i + "\n")
-                else:
-                    fp.write(i + "\n")
+            fp.write(timestamp + message + "\n")
             fp.close()
         except:
             log.warning('machine log history: path valid?: {}'.format(fp))
@@ -82,11 +78,7 @@ class MachineLogger():
         try:
             timestamp = time.strftime("%a, %b %d %Y %X: ")
             fp = open(self.mlp, 'a')
-            for num,i in enumerate(message.split('\\n')):
-                if num == 0:
-                    fp.write(timestamp + i + "\n")
-                else:
-                    fp.write(i + "\n")
+            fp.write(timestamp + message + "\n")
             fp.close()
         except:
             log.warning('machine log history: path valid?')
@@ -95,8 +87,7 @@ class MachineLogger():
     def log_message(self, message):
         try:
             fp = open(self.mlp, 'a')
-            for i in message.split('\\n'):
-                    fp.write(i + "\n")
+            fp.write(message + "\n")
             fp.close()
         except:
             log.warning('machine log history: path valid?')

@@ -1,5 +1,5 @@
 /********************************************************************
-* Description: inivar.cc
+* Description: inivar.c
 *   prints to stdout the INI file result of a variable-in-section
 *   search, useful for scripts that want to pick things out of INI files.
 *
@@ -15,37 +15,41 @@
 * Author:
 * License: GPL Version 2
 * System: Linux
-*
+*    
 * Copyright (c) 2004 All rights reserved.
 *
-* Last change:
+* Last change: 
 ********************************************************************/
 
-#include <cstdio>		/* printf(), fprintf(), FILE, fopen(),*/
-#include <cstdlib>		/* exit() */
-#include <cstring>		/* strcmp(), strcpy() */
-#include <climits>
+#include <stdio.h>		/* printf(), fprintf(), FILE, fopen(),*/
+#include <stdlib.h>		/* exit() */
+#include <string.h>		/* strcmp(), strcpy() */
+#include <limits.h>
 
+#include "config.h"
+#include "emc/linuxcnc.h"
 #include "inifile.hh"
 
 
 int main(int argc, char *argv[])
 {
+    int t;
     int num = 1;
-    const char *variable = nullptr;
-    const char *section = nullptr;
+    const char *variable = 0;
+    const char *section = 0;
     const char *path = "emc.ini";
+    const char *inistring;
     int retval;
-    bool tildeExpand = false;
+    bool tildeexpand=false;
 
     /* process command line args, indexing argv[] from [1] */
-    for (int t = 1; t < argc; t++) {
+    for (t = 1; t < argc; t++) {
 	if (!strcmp(argv[t], "-ini")) {
 	    if (t == argc - 1) {
 		/* no arg following -ini, so abort */
 		fprintf(stderr,
 		    "%s: INI file not specified after -ini\n", argv[0]);
-		exit(-1);
+		exit(1);
 	    } else {
 		path = argv[t+1];
 		t++;		/* step over following arg */
@@ -55,7 +59,7 @@ int main(int argc, char *argv[])
 		/* no arg following -var, so abort */
 		fprintf(stderr,
 		    "%s: variable name not specified after -var\n", argv[0]);
-		exit(-1);
+		exit(1);
 	    } else {
 		variable = argv[t+1];
 		t++;		/* step over following arg */
@@ -65,7 +69,7 @@ int main(int argc, char *argv[])
 		/* no arg following -sec, so abort */
 		fprintf(stderr,
 		    "%s: section name not specified after -sec\n", argv[0]);
-		exit(-1);
+		exit(1);
 	    } else {
 		section = argv[t+1];
 		t++;		/* step over following arg */
@@ -74,53 +78,50 @@ int main(int argc, char *argv[])
 	    if (t == argc - 1) {
 		/* no arg following -num, so abort */
 		fprintf(stderr,
-		    "%s: occurrence number not specified after -num\n", argv[0]);
-		exit(-1);
+		    "%s: line not specified after -num\n", argv[0]);
+		exit(1);
 	    } else {
-		char *endPtr;
-		errno = 0;
-		long result = strtol(argv[t + 1], &endPtr, 10);
-		if (errno || *endPtr != '\0' || result < 0 || result > INT_MAX) {
+		if (sscanf(argv[t + 1], "%i", &num) != 1) {
 		    fprintf(stderr,
 			"%s: invalid number after -num\n", argv[0]);
-		    exit(-1);
+		    exit(1);
 		}
-		num = static_cast<int>(result);
 		t++;		/* step over following arg */
 	    }
 	} else if (!strcmp(argv[t], "-tildeexpand")) {
-	    tildeExpand = !tildeExpand;
-	} else {
+	    tildeexpand = !tildeexpand;
+	} else{
 	    /* invalid argument */
 	    fprintf(stderr,
-		"%s: -var <variable> [-tildeexpand] [-sec <section>] [-num <occurrence_number>] [-ini <INI file>]\n",
+		"%s: -var <variable> {-tildeexpand} {-sec <section>} {-ini <INI file>} [-num <nth item>]\n",
 		argv[0]);
-	    exit(-1);
+	    exit(1);
 	}
     }
 
     /* check that variable was supplied */
-    if (!variable) {
+    if (0 == variable) {
 	fprintf(stderr, "%s: no variable supplied\n", argv[0]);
-	exit(-1);
+	exit(1);
     }
 
-    IniFile iniFile;
+    IniFile inifile;
     /* open the INI file */
-    iniFile.Open(path);
-    if (!iniFile.IsOpen()) {
+    inifile.Open(path);
+    if (inifile.IsOpen() == false) {
 	fprintf(stderr, "%s: can't open %s\n", argv[0], path);
 	exit(-1);
     }
 
-    auto iniString = iniFile.Find(variable, section, num);
-    if (iniString) {
-	if (tildeExpand) {
+    inistring = inifile.Find(variable, section, num);
+    if (inistring != NULL) {
+	if(tildeexpand)
+	{
 	    char expanded[PATH_MAX];
-	    iniFile.TildeExpansion(*iniString, expanded, sizeof(expanded));
+	    inifile.TildeExpansion(inistring, expanded, sizeof(expanded));
 	    printf("%s\n", expanded);
 	} else {
-	    printf("%s\n", *iniString);
+	    printf("%s\n", inistring);
 	}
 	retval = 0;
     } else {

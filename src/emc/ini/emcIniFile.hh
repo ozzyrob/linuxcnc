@@ -78,8 +78,7 @@ public:
                                 }
     const char *                Find(const char *tag, const char *section=NULL,
                                      int num = 1){
-                                    return(IniFile::Find(tag, section, num)
-                                      .value_or(nullptr));
+                                    return(IniFile::Find(tag, section, num));
                                 }
 
 private:

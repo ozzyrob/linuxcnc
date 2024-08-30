@@ -15,8 +15,13 @@
 # Manual DRO
 # Hook this one directly to the dro pins
 
+from __future__ import print_function
+import sys
 import os
-import tkinter as tk
+if sys.version_info[0] == 2:
+    import Tkinter as tk
+else:
+    import tkinter as tk
 import argparse
 import time
 import linuxcnc

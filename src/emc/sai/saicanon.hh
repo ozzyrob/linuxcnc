@@ -21,7 +21,6 @@ struct StandaloneInterpInternals
 
   CANON_PLANE _active_plane;
   int _active_slot;
-  int _selected_tool;
   int _feed_mode;
   double _feed_rate;
   int _flood;

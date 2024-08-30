@@ -19,7 +19,6 @@ from PyQt5.QtCore import pyqtProperty
 from PyQt5.QtGui import QIcon
 
 from qtvcp.widgets.widget_baseclass import _HalWidgetBase
-from qtvcp.widgets.indicatorMixIn import IndicatedMixIn
 from qtvcp.core import Status, Action, Info
 from qtvcp import logger
 
@@ -36,7 +35,7 @@ LOG = logger.getLogger(__name__)
 # Force the log level for this module
 #LOG.setLevel(logger.DEBUG) # One of DEBUG, INFO, WARNING, ERROR, CRITICAL
 
-class ActionToolButton(QToolButton, IndicatedMixIn):
+class ActionToolButton(QToolButton, _HalWidgetBase):
     def __init__(self, parent=None):
         super(ActionToolButton, self).__init__(parent)
         self._userView = True
@@ -51,26 +50,10 @@ class ActionToolButton(QToolButton, IndicatedMixIn):
             self.setMenu(SettingMenu)
             self.clicked.connect(self.setView)
 
-    # Override setText function so we can toggle displayed text
-    def setText(self, text):
-        if not self._state_text:
-            super(ActionToolButton,self).setText(text)
-            return
-        if self.isCheckable():
-            if self.isChecked():
-                super(ActionToolButton,self).setText(self._true_string)
-            else:
-                super(ActionToolButton,self).setText(self._false_string)
-        elif self._indicator_state:
-            super(ActionToolButton,self).setText(self._true_string)
-        else:
-            super(ActionToolButton,self).setText(self._false_string)
-
     def _hal_init(self):
         def homed_on_test():
             return (STATUS.machine_is_on()
                     and (STATUS.is_all_homed() or INFO.NO_HOME_REQUIRED))
-        super(ActionToolButton, self)._hal_init()
         self.buildMenu()
 
     def recordView(self):
@@ -99,7 +82,7 @@ def main():
     import sys
     from PyQt5.QtWidgets import QApplication
     app = QApplication(sys.argv)
-    widget = ActionToolButton()
+    widget = AxisToolButton()
     widget.show()
 
     sys.exit(app.exec_())

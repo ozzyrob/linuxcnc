@@ -19,7 +19,6 @@
 #include <unistd.h>		// stat()
 #include <limits.h>		// PATH_MAX
 #include <dlfcn.h>
-#include <memory>
 
 #include "rcs.hh"		// INIFILE
 #include "emc.hh"		// EMC NML
@@ -32,6 +31,7 @@
 #include "inifile.hh"
 #include "rcs_print.hh"
 #include "task.hh"		// emcTaskCommand etc
+#include "python_plugin.hh"
 #include "taskclass.hh"
 #include "motion.h"
 
@@ -40,7 +40,7 @@
 //note:the +1 is for the PROGRAM_PREFIX or default directory==nc_files
 
 /* flag for how we want to interpret traj coord mode, as mdi or auto */
-static EMC_TASK_MODE mdiOrAuto = EMC_TASK_MODE::AUTO;
+static int mdiOrAuto = EMC_TASK_MODE_AUTO;
 
 InterpBase *pinterp=0;
 #define interp (*pinterp)
@@ -67,7 +67,7 @@ static void print_interp_error(int retval)
     if (0 != interp_error_text_buf[0]) {
 	rcs_print_error("interp_error: %s\n", interp_error_text_buf);
     }
-    emcOperatorError("%s", interp_error_text_buf);
+    emcOperatorError(0, "%s", interp_error_text_buf);
     index = 0;
     if (emc_debug & EMC_DEBUG_INTERP) {
 	rcs_print("Interpreter stack: \t");
@@ -98,15 +98,15 @@ static void user_defined_add_m_code(int num, double arg1, double arg2)
 {
     // num      is the m_code number, typically 00-99 corresponding to M100-M199
     char fmt[EMC_SYSTEM_CMD_LEN];
-    auto system_cmd = std::make_unique<EMC_SYSTEM_CMD>();
+    EMC_SYSTEM_CMD system_cmd;
 
     //we call FINISH() to flush any linked motions before the M1xx call, 
     //otherwise they would mix badly
     FINISH();
     rtapi_strxcpy(fmt, user_defined_fmt[user_defined_function_dirindex[num]]);
     rtapi_strxcat(fmt, " %f %f");
-    snprintf(system_cmd->string, sizeof(system_cmd->string), fmt, num, arg1, arg2);
-    interp_list.append(std::move(system_cmd));
+    snprintf(system_cmd.string, sizeof(system_cmd.string), fmt, num, arg1, arg2);
+    interp_list.append(system_cmd);
 }
 
 int emcTaskInit()
@@ -116,18 +116,17 @@ int emcTaskInit()
     char path[EMC_SYSTEM_CMD_LEN];
     struct stat buf;
     IniFile inifile;
-    std::optional<const char*> inistring;
-    ZERO_EMC_POSE(emcStatus->task.toolOffset);
+    const char *inistring;
 
     inifile.Open(emc_inifile);
 
     // Identify user_defined_function directories
-    if ((inistring = inifile.Find("PROGRAM_PREFIX", "DISPLAY"))) {
-        if (strlen(*inistring) >= sizeof(mdir[0])) {
+    if (NULL != (inistring = inifile.Find("PROGRAM_PREFIX", "DISPLAY"))) {
+        if (strlen(inistring) >= sizeof(mdir[0])) {
             rcs_print("[DISPLAY]PROGRAM_PREFIX too long (max len %zu)\n", sizeof(mdir[0]));
             return -1;
         }
-        strncpy(mdir[0], *inistring, sizeof(mdir[0]));
+        strncpy(mdir[0], inistring, sizeof(mdir[0]));
     } else {
         // default dir if no PROGRAM_PREFIX
         rtapi_strlcpy(mdir[0], "nc_files", sizeof(mdir[0]));
@@ -136,17 +135,17 @@ int emcTaskInit()
 
     // user can specify a list of directories for user defined functions
     // with a colon (:) separated list
-    if ((inistring = inifile.Find("USER_M_PATH", "RS274NGC"))) {
+    if (NULL != (inistring = inifile.Find("USER_M_PATH", "RS274NGC"))) {
         char* nextdir;
         char tmpdirs[PATH_MAX];
 
         for (dct=1; dct < MAX_M_DIRS; dct++) mdir[dct][0] = 0;
 
-        if (strlen(*inistring) >= sizeof(tmpdirs)) {
+        if (strlen(inistring) >= sizeof(tmpdirs)) {
             rcs_print("[RS274NGC]USER_M_PATH too long (max len %zu)\n", sizeof(tmpdirs));
             return -1;
         }
-        strncpy(tmpdirs, *inistring, sizeof(tmpdirs));
+        strncpy(tmpdirs, inistring, sizeof(tmpdirs));
 
         nextdir = strtok(tmpdirs,":");  // first token
         dct = 1;
@@ -216,17 +215,11 @@ int emcTaskStateRestore()
 {
     int res = 0;
     // Do NOT restore on MDI command
-    if (emcStatus->task.mode == EMC_TASK_MODE::AUTO) {
+    if (emcStatus->task.mode == EMC_TASK_MODE_AUTO) {
         // Validity of state tag checked within restore function
         res = pinterp->restore_from_tag(emcStatus->motion.traj.tag);
     }
     return res;
-}
-
-void emcTaskQueueTaskPlanSynchCmd()
-{
-    auto taskPlanSynchCmd = std::make_unique<EMC_TASK_PLAN_SYNCH>();
-    emcTaskQueueCommand(std::move(taskPlanSynchCmd));
 }
 
 int emcTaskAbort()
@@ -238,8 +231,8 @@ int emcTaskAbort()
     interp_list.clear();
 
     // clear out the interpreter state
-    emcStatus->task.interpState = EMC_TASK_INTERP::IDLE;
-    emcStatus->task.execState = EMC_TASK_EXEC::DONE;
+    emcStatus->task.interpState = EMC_TASK_INTERP_IDLE;
+    emcStatus->task.execState = EMC_TASK_EXEC_DONE;
     emcStatus->task.task_paused = 0;
     emcStatus->task.motionLine = 0;
     emcStatus->task.readLine = 0;
@@ -250,7 +243,8 @@ int emcTaskAbort()
     steppingWait = 0;
 
     // now queue up command to resynch interpreter
-    emcTaskQueueTaskPlanSynchCmd();
+    EMC_TASK_PLAN_SYNCH taskPlanSynchCmd;
+    emcTaskQueueCommand(&taskPlanSynchCmd);
 
     // without emcTaskPlanClose(), a new run command resumes at
     // aborted line-- feature that may be considered later
@@ -267,40 +261,40 @@ int emcTaskAbort()
     return 0;
 }
 
-int emcTaskSetMode(EMC_TASK_MODE mode)
+int emcTaskSetMode(int mode)
 {
     int retval = 0;
 
     if (jogging_is_active()) {
-        emcOperatorError("Ignoring task mode change while jogging");
+        emcOperatorError(0, "Ignoring task mode change while jogging");
         return 0;
     }
 
     switch (mode) {
-    case EMC_TASK_MODE::MANUAL:
+    case EMC_TASK_MODE_MANUAL:
 	// go to manual mode
         if (all_homed()) {
-            emcTrajSetMode(EMC_TRAJ_MODE::TELEOP);
+            emcTrajSetMode(EMC_TRAJ_MODE_TELEOP);
         } else {
-            emcTrajSetMode(EMC_TRAJ_MODE::FREE);
+            emcTrajSetMode(EMC_TRAJ_MODE_FREE);
         }
-	mdiOrAuto = EMC_TASK_MODE::AUTO;	// we'll default back to here
+	mdiOrAuto = EMC_TASK_MODE_AUTO;	// we'll default back to here
 	break;
 
-    case EMC_TASK_MODE::MDI:
+    case EMC_TASK_MODE_MDI:
 	// go to mdi mode
-	emcTrajSetMode(EMC_TRAJ_MODE::COORD);
+	emcTrajSetMode(EMC_TRAJ_MODE_COORD);
 	emcTaskAbort();
 	emcTaskPlanSynch();
-	mdiOrAuto = EMC_TASK_MODE::MDI;
+	mdiOrAuto = EMC_TASK_MODE_MDI;
 	break;
 
-    case EMC_TASK_MODE::AUTO:
+    case EMC_TASK_MODE_AUTO:
 	// go to auto mode
-	emcTrajSetMode(EMC_TRAJ_MODE::COORD);
+	emcTrajSetMode(EMC_TRAJ_MODE_COORD);
 	emcTaskAbort();
 	emcTaskPlanSynch();
-	mdiOrAuto = EMC_TASK_MODE::AUTO;
+	mdiOrAuto = EMC_TASK_MODE_AUTO;
 	break;
 
     default:
@@ -311,54 +305,63 @@ int emcTaskSetMode(EMC_TASK_MODE mode)
     return retval;
 }
 
-int emcTaskSetState(EMC_TASK_STATE state)
+int emcTaskSetState(int state)
 {
     int t;
     int retval = 0;
 
     switch (state) {
-    case EMC_TASK_STATE::OFF:
+    case EMC_TASK_STATE_OFF:
         emcMotionAbort();
 	// turn the machine servos off-- go into READY state
     for (t = 0; t < emcStatus->motion.traj.spindles; t++)  emcSpindleAbort(t);
+	for (t = 0; t < emcStatus->motion.traj.joints; t++) {
+	    emcJointDisable(t);
+	}
 	emcTrajDisable();
-	emcIoAbort(EMC_ABORT::TASK_STATE_OFF);
-    emcCoolantFloodOff();//TODO: race here
+	emcIoAbort(EMC_ABORT_TASK_STATE_OFF);
+	emcLubeOff();
 	emcTaskAbort();
     emcJointUnhome(-2); // only those joints which are volatile_home
-	emcAbortCleanup(EMC_ABORT::TASK_STATE_OFF);
+	emcAbortCleanup(EMC_ABORT_TASK_STATE_OFF);
 	emcTaskPlanSynch();
 	break;
 
-    case EMC_TASK_STATE::ON:
+    case EMC_TASK_STATE_ON:
 	// turn the machine servos on
 	emcTrajEnable();
-    emcCoolantFloodOff();//TODO: race here
+	for (t = 0; t < emcStatus->motion.traj.joints; t++){
+		emcJointEnable(t);
+	}
+	emcLubeOn();
 	break;
 
-    case EMC_TASK_STATE::ESTOP_RESET:
+    case EMC_TASK_STATE_ESTOP_RESET:
 	// reset the estop
 	emcAuxEstopOff();
-	emcCoolantFloodOff();//TODO: race here
+	emcLubeOff();
 	emcTaskAbort();
-        emcIoAbort(EMC_ABORT::TASK_STATE_ESTOP_RESET);
+        emcIoAbort(EMC_ABORT_TASK_STATE_ESTOP_RESET);
     for (t = 0; t < emcStatus->motion.traj.spindles; t++) emcSpindleAbort(t);
-	emcAbortCleanup(EMC_ABORT::TASK_STATE_ESTOP_RESET);
+	emcAbortCleanup(EMC_ABORT_TASK_STATE_ESTOP_RESET);
 	emcTaskPlanSynch();
 	break;
 
-    case EMC_TASK_STATE::ESTOP:
+    case EMC_TASK_STATE_ESTOP:
         emcMotionAbort();
 	for (t = 0; t < emcStatus->motion.traj.spindles; t++) emcSpindleAbort(t);
 	// go into estop-- do both IO estop and machine servos off
 	emcAuxEstopOn();
+	for (t = 0; t < emcStatus->motion.traj.joints; t++) {
+	    emcJointDisable(t);
+	}
 	emcTrajDisable();
-    emcCoolantFloodOff();//TODO: race here
+	emcLubeOff();
 	emcTaskAbort();
-        emcIoAbort(EMC_ABORT::TASK_STATE_ESTOP);
+        emcIoAbort(EMC_ABORT_TASK_STATE_ESTOP);
 	for (t = 0; t < emcStatus->motion.traj.spindles; t++) emcSpindleAbort(t);
         emcJointUnhome(-2); // only those joints which are volatile_home
-	emcAbortCleanup(EMC_ABORT::TASK_STATE_ESTOP);
+	emcAbortCleanup(EMC_ABORT_TASK_STATE_ESTOP);
 	emcTaskPlanSynch();
 	break;
 
@@ -386,15 +389,15 @@ int emcTaskSetState(EMC_TASK_STATE state)
   COORD       MDI           MDI
   COORD       AUTO          AUTO
   */
-EMC_TASK_MODE determineMode()
+static int determineMode()
 {
-    if (emcStatus->motion.traj.mode == EMC_TRAJ_MODE::FREE) {
-        return EMC_TASK_MODE::MANUAL;
+    if (emcStatus->motion.traj.mode == EMC_TRAJ_MODE_FREE) {
+        return EMC_TASK_MODE_MANUAL;
     }
-    if (emcStatus->motion.traj.mode == EMC_TRAJ_MODE::TELEOP) {
-        return EMC_TASK_MODE::MANUAL;
+    if (emcStatus->motion.traj.mode == EMC_TRAJ_MODE_TELEOP) {
+        return EMC_TASK_MODE_MANUAL;
     }
-    // for EMC_TRAJ_MODE::COORD
+    // for EMC_TRAJ_MODE_COORD
     return mdiOrAuto;
 }
 
@@ -412,17 +415,17 @@ EMC_TASK_MODE determineMode()
   DISABLED       OUT OF ESTOP  ESTOP_RESET
   ENABLED        OUT OF ESTOP  ON
   */
-static EMC_TASK_STATE determineState()
+static int determineState()
 {
     if (emcStatus->io.aux.estop) {
-	return EMC_TASK_STATE::ESTOP;
+	return EMC_TASK_STATE_ESTOP;
     }
 
     if (!emcStatus->motion.traj.enabled) {
-	return EMC_TASK_STATE::ESTOP_RESET;
+	return EMC_TASK_STATE_ESTOP_RESET;
     }
 
-    return EMC_TASK_STATE::ON;
+    return EMC_TASK_STATE_ON;
 }
 
 static int waitFlag = 0;
@@ -431,13 +434,13 @@ int emcTaskPlanInit()
 {
     if(!pinterp) {
 	IniFile inifile;
-	std::optional<const char*> inistring;
+	const char *inistring;
 	inifile.Open(emc_inifile);
 	if((inistring = inifile.Find("INTERPRETER", "TASK"))) {
-	    pinterp = interp_from_shlib(*inistring);
+	    pinterp = interp_from_shlib(inistring);
 	    fprintf(stderr, "interp_from_shlib() -> %p\n", pinterp);
             if (!pinterp) {
-                fprintf(stderr, "failed to load [TASK]INTERPRETER (%s)\n", *inistring);
+                fprintf(stderr, "failed to load [TASK]INTERPRETER (%s)\n", inistring);
                 return -1;
             }
 	}
@@ -685,15 +688,15 @@ int emcTaskPlanCommand(char *cmd)
 
 int emcTaskUpdate(EMC_TASK_STAT * stat)
 {
-    stat->mode = determineMode();
-    EMC_TASK_STATE oldstate = stat->state;
-    stat->state = determineState();
+    stat->mode = (enum EMC_TASK_MODE_ENUM) determineMode();
+    int oldstate = stat->state;
+    stat->state = (enum EMC_TASK_STATE_ENUM) determineState();
 
-    if(oldstate == EMC_TASK_STATE::ON && oldstate != stat->state) {
+    if(oldstate == EMC_TASK_STATE_ON && oldstate != stat->state) {
 	emcTaskAbort();
     for (int s = 0; s < emcStatus->motion.traj.spindles; s++) emcSpindleAbort(s);
-        emcIoAbort(EMC_ABORT::TASK_STATE_NOT_ON);
-        emcAbortCleanup(EMC_ABORT::TASK_STATE_NOT_ON);
+        emcIoAbort(EMC_ABORT_TASK_STATE_NOT_ON);
+	emcAbortCleanup(EMC_ABORT_TASK_STATE_NOT_ON);
     }
 
     // execState set in main
@@ -711,19 +714,15 @@ int emcTaskUpdate(EMC_TASK_STAT * stat)
     // update active G and M codes
     // Start by assuming that we can't unpack a state tag from motion
     int res_state = INTERP_ERROR;
-    if (emcStatus->task.interpState != EMC_TASK_INTERP::IDLE) {
+    if (emcStatus->task.interpState != EMC_TASK_INTERP_IDLE) {
         res_state = interp.active_modes(&stat->activeGCodes[0],
 					&stat->activeMCodes[0],
 					&stat->activeSettings[0],
 					emcStatus->motion.traj.tag);
-	if (res_state != INTERP_ERROR) {
-            rtapi_strxcpy(stat->file, emcStatus->motion.traj.tag.filename);
-            stat->currentLine = emcStatus->motion.traj.tag.fields[0];
-	}
     } 
     // If we get an error from trying to unpack from the motion state, always
     // use interp's internal state, so the active state is never out of date
-    if (emcStatus->task.mode != EMC_TASK_MODE::AUTO ||
+    if (emcStatus->task.mode != EMC_TASK_MODE_AUTO ||
 	res_state == INTERP_ERROR) {
         interp.active_g_codes(&stat->activeGCodes[0]);
         interp.active_m_codes(&stat->activeMCodes[0]);
@@ -735,13 +734,15 @@ int emcTaskUpdate(EMC_TASK_STAT * stat)
     
     //update state of block delete
     stat->block_delete_state = GET_BLOCK_DELETE();
+    
+    stat->heartbeat++;
 
     return 0;
 }
 
-int emcAbortCleanup(EMC_ABORT reason, const char *message)
+int emcAbortCleanup(int reason, const char *message)
 {
-    int status = interp.on_abort((int)reason,message);
+    int status = interp.on_abort(reason,message);
     if (status > INTERP_MIN_ERROR)
 	print_interp_error(status);
     return status;

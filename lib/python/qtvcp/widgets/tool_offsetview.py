@@ -21,7 +21,7 @@ import operator
 from PyQt5.QtCore import Qt, QAbstractTableModel, QVariant, pyqtProperty, QSize, pyqtSlot
 from PyQt5.QtGui import QColor, QIcon
 from PyQt5.QtWidgets import (QTableView, QAbstractItemView, QCheckBox,
-QItemEditorFactory,QDoubleSpinBox,QSpinBox,QStyledItemDelegate, qApp)
+QItemEditorFactory,QDoubleSpinBox,QSpinBox,QStyledItemDelegate)
 from qtvcp.widgets.widget_baseclass import _HalWidgetBase
 from qtvcp.core import Status, Action, Info, Tool
 from qtvcp import logger
@@ -164,7 +164,7 @@ class ToolOffsetView(QTableView, _HalWidgetBase):
         # display in title bar for convenience
         self.setWindowTitle(sf)
         # row 0 is not editable (checkbox position)
-        # column 19 is the descriptive text column
+        # column 19 is the descritive text column
         if item.column() == 19:
             self.callTextDialog(text,item)
         elif item.column() <19 and item.column() > 0:
@@ -181,16 +181,12 @@ class ToolOffsetView(QTableView, _HalWidgetBase):
         STATUS.emit('dialog-request', mess)
 
     # numerical only
-    def callDialog(self, text, item, next=False):
+    def callDialog(self, text,item):
         axis = self.tablemodel.headerdata[item.column()]
         tool = self.tablemodel.arraydata[item.row()][1]
-
         mess = {'NAME':self.dialog_code,'ID':'%s__' % self.objectName(),
-                'PRELOAD':float(text),
-                'TITLE':'Tool {} Offset of {},{}'.format(tool, axis,text),
-                'ITEM':item,
-                'NEXT':next,
-                'WIDGETCYCLE': True}
+                'PRELOAD':float(text), 'TITLE':'Tool {} Offset of {},{}'.format(tool, axis,text),
+                'ITEM':item}
         LOG.debug('message sent:{}'.format (mess))
         STATUS.emit('dialog-request', mess)
 
@@ -203,52 +199,10 @@ class ToolOffsetView(QTableView, _HalWidgetBase):
         name = bool(message.get('NAME') == self.dialog_code)
         name2 = bool(message.get('NAME') == self.text_dialog_code)
         item = message.get('ITEM')
-        next = message.get('NEXT', False)
-        back = message.get('BACK', False)
-
         if code and name and num is not None:
             self.tablemodel.setData(item, num, None)
         elif code and name2 and num is not None:
             self.tablemodel.setData(item, num, None)
-
-        # request for next input widget to right or left
-        if code and name:
-
-            if next:
-                self.right()
-
-                newobj = self.currentIndex()
-                # if we selected the text column, move back
-                if newobj.column() == 19:
-                    self.left()
-                    newobj = self.currentIndex()
-                cellContent = newobj.data()
-                text = cellContent
-
-                # update the screen
-                qApp.processEvents()
-
-                # update the dialog
-                self.callDialog(text,newobj,True)
-
-            elif back:
-                self.left()
-
-                newobj = self.currentIndex()
-                # if we selected the checkbox column, move forward
-                if newobj.column() == 0:
-                    self.right()
-                    newobj = self.currentIndex()
-
-                newobj = self.currentIndex()
-                cellContent = newobj.data()
-                text = cellContent
-
-                # update the screen
-                qApp.processEvents()
-
-                # update the dialog
-                self.callDialog(text,newobj,True)
 
     #############################################################
 
@@ -309,42 +263,32 @@ class ToolOffsetView(QTableView, _HalWidgetBase):
     @pyqtSlot(int)
     def scroll(self, data):
         if data > self._last:
-            self.right()
+            self.up()
         elif data < self._last:
-            self.right()
+            self.down()
         self._last = data
 
     # moves the selection up
     @pyqtSlot()
     def up(self):
         cr = self.currentIndex().row()
-        # state of checkbox ie. is this row selected?
-        # if selected, move horizontally
-        state = self.model().arraydata[cr][0].isChecked()
-        if state:
-            self.right()
-            return
-        else:
-            self.setCurrentIndex(self.moveCursor(QAbstractItemView.CursorAction.MoveUp,Qt.NoModifier))
+        cc = 0#self.currentIndex().column()
+        row = cr-1
+        if row < 0:
+            row = 0
+        z = self.model().createIndex(row,cc)
+        self.setCurrentIndex(z)
 
     # moves the selection down
     @pyqtSlot()
     def down(self):
         cr = self.currentIndex().row()
-        # state of checkbox ie. is this row selected?
-        # if selected, move horizontally
-        state = self.model().arraydata[cr][0].isChecked()
-        if state:
-            self.left()
-            return
-        else:
-            self.setCurrentIndex(self.moveCursor(QAbstractItemView.CursorAction.MoveDown,Qt.NoModifier))
-
-    def left(self):
-        self.setCurrentIndex(self.moveCursor(QAbstractItemView.CursorAction.MoveLeft,Qt.NoModifier))
-
-    def right(self):
-        self.setCurrentIndex(self.moveCursor(QAbstractItemView.CursorAction.MoveRight,Qt.NoModifier))
+        cc = 0#self.currentIndex().column()
+        row = cr+1
+        if row > self.model().rowCount(None)-1:
+            row = cr
+        z = self.model().createIndex(row, cc)
+        self.setCurrentIndex(z)
 
     def toggleCurrent(self):
         self.model().toggle(self.currentIndex().row())
